@@ -1,0 +1,53 @@
+# --- 1. 屏蔽 H7 专用编译输出文件夹 (你提到的那个型号目录) ---
+H723OSCA1/
+DebugConfig/
+
+# --- 2. 屏蔽调试组件生成的描述文件 (包括 EventRecorder) ---
+*.scvd
+
+# --- 3. 屏蔽通用编译后缀 (最关键的清理) ---
+*.o
+*.d
+*.crf
+*.lnp
+*.axf
+*.map
+*.htm
+*.build_log.htm
+*.dep
+*.iex
+*.lst
+*.sct
+
+# --- 4. 屏蔽 Keil 个人偏好与临时文件 ---
+*.uvguix.*
+*.uvoptx
+*.bak
+
+# --- 5. 屏蔽 CubeMX 产生的备份 ---
+Backup/
+.mxproject
+
+# ==========================================
+# --- 6. VS Code & CMake 专用屏蔽 (新增) ---
+# ==========================================
+
+# 屏蔽 CMake 默认生成目录
+build/
+.cache/
+
+# 屏蔽 CMake 工具生成的本地配置文件
+CMakeUserPresets.json
+
+# 屏蔽 VS Code 个人工作区配置
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+# 注意：上面的 ! 符号表示保留关键的调试和任务配置，方便团队共享
+# 如果你不想共享任何 VS Code 配置，直接用 .vscode/ 即可
+
+# 屏蔽 C/C++ 扩展生成的索引数据库
+.clangd/
+.browse.VC.db
+.history/
