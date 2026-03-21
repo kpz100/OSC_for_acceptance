@@ -11,8 +11,6 @@ uint32_t * BSP_LCD_GetDrawBuffer(void)
 }
 
 void BSP_LCD_Init(void) {
-    uint32_t dest_addr = SDRAM_START_ADDR;
-
     hdma2d.Instance = DMA2D;
     hdma2d.Init.Mode = DMA2D_R2M;
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
@@ -20,7 +18,10 @@ void BSP_LCD_Init(void) {
 
     if (HAL_DMA2D_Init(&hdma2d) == HAL_OK)
     {
-        HAL_DMA2D_Start(&hdma2d, LCD_COLOR_BLACK, dest_addr, LCD_WIDTH, LCD_HEIGHT);
+        HAL_DMA2D_Start(&hdma2d, LCD_COLOR_BLACK, LCD_FB0_ADDR, LCD_WIDTH, LCD_HEIGHT);
+        HAL_DMA2D_PollForTransfer(&hdma2d, 50);
+
+        HAL_DMA2D_Start(&hdma2d, LCD_COLOR_BLACK, LCD_FB1_ADDR, LCD_WIDTH, LCD_HEIGHT);
         HAL_DMA2D_PollForTransfer(&hdma2d, 50);
     }
 }

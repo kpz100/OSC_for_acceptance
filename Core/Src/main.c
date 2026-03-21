@@ -32,6 +32,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "test.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,7 +53,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+#define FILTER_SIZE  10u  // 滤波窗口大小
 
+typedef struct {
+    uint32_t sum_x;
+    uint32_t sum_y;
+    uint16_t count;
+} Touch_Filter_t;
+
+Touch_Filter_t touch_filter = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,14 +133,50 @@ int main(void)
   MX_DAC1_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-	Test_LCD_Comprehensive();
+	Test_Start();
+  uint32_t temp = 0;
+  BSP_DWT_Delay_ms(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    
+    if (GT911_Scan()) { // 成功读取到触摸数据
+        // 仅处理单点触摸平滑（GT911通常取 index 0 为主要点）
+        if (touch_data.touch_num > 0) {
+            
+            // 累加采样值
+            touch_filter.sum_x += touch_data.x[0];
+            touch_filter.sum_y += touch_data.y[0];
+            touch_filter.count++;
+
+            // 当达到10个点时，计算平均值并输出
+            if (touch_filter.count >= FILTER_SIZE) {
+                uint16_t avg_x = touch_filter.sum_x / FILTER_SIZE;
+                uint16_t avg_y = touch_filter.sum_y / FILTER_SIZE;
+
+                // 执行原有绘图逻辑
+                BSP_LCD_DrawPixel(avg_x, avg_y, LCD_COLOR_BLACK);
+                printf("Filtered Touch: X=%d, Y=%d\r\n", avg_x, avg_y);
+
+                // 计数器逻辑
+                temp++;
+                if (temp > 10) {
+					BSP_LCD_Clear(LCD_COLOR_WHITE);
+                    BSP_LCD_Flip();    
+                    temp = 0;
+                }
+
+                // 重置滤波器，准备下一轮平均
+                touch_filter.sum_x = 0;
+                touch_filter.sum_y = 0;
+                touch_filter.count = 0;
+            }
+        }
+    } else {
+
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
