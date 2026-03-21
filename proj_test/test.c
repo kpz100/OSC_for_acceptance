@@ -1,27 +1,13 @@
 #include "test.h"
+#include "test_utils.h"
 #include "usart.h"
 #include <stdio.h>
-#include <stdarg.h>
 
 /**
  * @brief Print test message to USART
+ * @deprecated 使用 Test_Printf() 替代 (来自 test_utils.h)
  */
-static void Test_Printf(const char *format, ...)
-{
-    // Implementation depends on available USART printf function
-    // This is a placeholder for debug output
-	
-	char buffer[256];
-    va_list args;
-    
-    va_start(args, format);
-    int len = vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    if (len > 0) {
-        HAL_UART_Transmit(&huart1, (uint8_t *)buffer, len, 100);
-    }
-}
+#define Test_Printf Test_Printf  // 使用test_utils.h中的统一函数
 
 /**
  * @brief Test LCD color display
@@ -428,24 +414,5 @@ void Test_LCD_Comprehensive(void)
 	}
 }
 
-/****** Test Selector - Based on TEST_TYPE Macro ******/
-
-/**
- * @brief Test entry point - Choose test type via TEST_TYPE macro
- * 
- * Macro selection:
- *   - TEST_TYPE_LCD: Run comprehensive LCD test
- *   - TEST_TYPE_TOUCH: Run comprehensive touch sensor test
- */
-void Test_Start(void)
-{
-#if TEST_TYPE == TEST_TYPE_LCD
-    Test_LCD_Comprehensive();
-    
-#elif TEST_TYPE == TEST_TYPE_TOUCH
-    Test_Touch_Comprehensive();
-    
-#else
-    Test_Printf("ERROR: Unknown TEST_TYPE defined!\\r\\n");
-#endif
-}
+// Note: Test_Start() 已移至 test_utils.c 中实现
+// 新的统一入口使用 Test_Start() 从 test_utils.h
