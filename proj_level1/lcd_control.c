@@ -15,6 +15,8 @@ void LCD_SDRAM_DWT_Init(void) {
         while(1); // 0通过
     }
     BSP_LCD_Init();
+    Touch_I2C_GPIO_Config();
+    GT911_Reset_Sequence();
     HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 }
 

@@ -8,6 +8,7 @@
 #include "ascii_font.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* 测试数据缓冲区 - 用于波形显示 */
 static uint32_t wave_data_ch0[LCD_WIDTH];
@@ -30,6 +31,21 @@ static uint8_t g_touch_test_mode = 0;
 /* 触摸合并处理相关变量 */
 #define TOUCH_SAMPLE_COUNT     10   // 合并采样点数
 #define TOUCH_MIN_INTERVAL_MS  100  // 最小处理间隔(ms)
+#define TOUCH_DEAD_ZONE        25   // 触摸死区阈值(像素)，变化量小于此值不处理
+#define TOUCH_DEAD_ZONE_UNLOCK_MS  100  // 死区解锁时间(ms)，进入死区后需要等待此时间才能重新处理
+
+/* 触摸范围锁定相关变量 */
+static uint16_t g_last_processed_x = 0;      // 上次处理的X坐标
+static uint16_t g_last_processed_y = 0;      // 上次处理的Y坐标
+static uint8_t  g_touch_locked = 0;          // 触摸锁定标志
+static uint32_t g_touch_lock_start_time = 0; // 锁定开始时间
+static uint32_t g_touch_lock_duration = 0;   // 锁定持续时间
+
+/* 死区解锁相关变量 */
+static uint8_t  g_in_dead_zone = 0;           // 是否处于死区内
+static uint32_t g_dead_zone_enter_time = 0;   // 进入死区的时间
+static uint16_t g_dead_zone_x = 0;            // 死区内的参考X坐标
+static uint16_t g_dead_zone_y = 0;            // 死区内的参考Y坐标
 
 static uint32_t g_last_touch_process_time = 0;  // 上次处理时间(ms)
 static uint16_t g_touch_samples_x[TOUCH_SAMPLE_COUNT] = {0};
@@ -115,6 +131,91 @@ static void Update_Waveform_Display(void)
     }
 }
 
+/* 检查是否应该离开死区 (基于时间和距离) */
+static uint8_t Should_Exit_Dead_Zone(uint16_t x, uint16_t y)
+{
+    if (!g_in_dead_zone) {
+        return 1;  // 不在死区内，可以处理
+    }
+    
+    uint32_t current_time = BSP_DWT_GetCounter() / 1000;
+    uint32_t elapsed = current_time - g_dead_zone_enter_time;
+    
+    // 计算与进入死区时坐标的距离
+    int16_t delta_x = abs((int16_t)x - (int16_t)g_dead_zone_x);
+    int16_t delta_y = abs((int16_t)y - (int16_t)g_dead_zone_y);
+    
+    // 条件1: 已经超过解锁时间
+    if (elapsed >= TOUCH_DEAD_ZONE_UNLOCK_MS) {
+        g_in_dead_zone = 0;
+        return 1;
+    }
+    
+    // 条件2: 移动距离超过死区阈值的2倍，强制退出死区(防止长时间卡在死区)
+    if (delta_x > TOUCH_DEAD_ZONE * 2 || delta_y > TOUCH_DEAD_ZONE * 2) {
+        g_in_dead_zone = 0;
+        return 1;
+    }
+    
+    return 0;  // 仍在死区锁定中
+}
+
+/* 检查触摸点是否在死区内 (坐标变化量小于阈值) */
+static uint8_t Is_In_Dead_Zone(uint16_t x, uint16_t y)
+{
+    // 如果还没有处理过任何触摸点，则不在死区内
+    if (g_last_processed_x == 0 && g_last_processed_y == 0) {
+        return 0;
+    }
+    
+    // 计算坐标变化量
+    int16_t delta_x = abs((int16_t)x - (int16_t)g_last_processed_x);
+    int16_t delta_y = abs((int16_t)y - (int16_t)g_last_processed_y);
+    
+    // 如果变化量小于死区阈值，则认为在死区内
+    if (delta_x <= TOUCH_DEAD_ZONE && delta_y <= TOUCH_DEAD_ZONE) {
+        // 如果是首次进入死区，记录进入时间和坐标
+        if (!g_in_dead_zone) {
+            g_in_dead_zone = 1;
+            g_dead_zone_enter_time = BSP_DWT_GetCounter() / 1000;
+            g_dead_zone_x = x;
+            g_dead_zone_y = y;
+        }
+        return 1;
+    }
+    
+    // 不在死区内，重置死区标志
+    g_in_dead_zone = 0;
+    return 0;
+}
+
+/* 检查触摸锁定状态 */
+static uint8_t Is_Touch_Locked(void)
+{
+    if (!g_touch_locked) {
+        return 0;
+    }
+    
+    uint32_t current_time = BSP_DWT_GetCounter() / 1000;
+    uint32_t elapsed = current_time - g_touch_lock_start_time;
+    
+    // 如果锁定时间已过，解锁
+    if (elapsed >= g_touch_lock_duration) {
+        g_touch_locked = 0;
+        return 0;
+    }
+    
+    return 1;
+}
+
+/* 设置触摸锁定 (防止重复触发) */
+static void Set_Touch_Lock(uint32_t duration_ms)
+{
+    g_touch_locked = 1;
+    g_touch_lock_start_time = BSP_DWT_GetCounter() / 1000;
+    g_touch_lock_duration = duration_ms;
+}
+
 /* 计算触摸点的平均值 (中值滤波 + 平均) */
 static void Calculate_Average_Touch(uint16_t* avg_x, uint16_t* avg_y)
 {
@@ -187,10 +288,66 @@ static void Calculate_Average_Touch(uint16_t* avg_x, uint16_t* avg_y)
 /* 处理合并后的触摸点 */
 static void Process_Touch_Point(uint16_t x, uint16_t y)
 {
+    // 检查触摸锁定状态
+    if (Is_Touch_Locked()) {
+        // 触摸锁定时，只更新坐标显示，不处理按钮
+        if (g_coord_text) {
+            char coord_str[48];
+            sprintf(coord_str, "Touch: %3d, %3d (locked %dms)", 
+                    x, y, g_touch_lock_duration - (BSP_DWT_GetCounter() / 1000 - g_touch_lock_start_time));
+            strcpy((char*)g_coord_text->txt, coord_str);
+            
+            // 重新绘制坐标文本区域
+            BSP_LCD_FillRect(g_coord_text->figure.x, g_coord_text->figure.y,
+                             g_coord_text->figure.w, g_coord_text->figure.h,
+                             g_coord_text->figure.bg_color);
+            BSP_LCD_DrawString(g_coord_text->figure.x + 5,
+                               g_coord_text->figure.y + (g_coord_text->figure.h - 16) / 2,
+                               (char*)g_coord_text->txt,
+                               g_coord_text->font_color,
+                               g_coord_text->font_type,
+                               g_coord_text->figure.bg_color);
+        }
+        return;
+    }
+    
+    // 检查是否在死区内 (防止抖动重复触发)
+    if (Is_In_Dead_Zone(x, y)) {
+        // 检查是否应该离开死区
+        if (!Should_Exit_Dead_Zone(x, y)) {
+            // 仍在死区内，只更新坐标显示，不处理按钮
+            if (g_coord_text) {
+                char coord_str[48];
+                uint32_t current_time = BSP_DWT_GetCounter() / 1000;
+                uint32_t remaining = TOUCH_DEAD_ZONE_UNLOCK_MS - (current_time - g_dead_zone_enter_time);
+                sprintf(coord_str, "Touch: %3d, %3d (dead zone %dms)", x, y, remaining > 0 ? remaining : 0);
+                strcpy((char*)g_coord_text->txt, coord_str);
+                
+                // 重新绘制坐标文本区域
+                BSP_LCD_FillRect(g_coord_text->figure.x, g_coord_text->figure.y,
+                                 g_coord_text->figure.w, g_coord_text->figure.h,
+                                 g_coord_text->figure.bg_color);
+                BSP_LCD_DrawString(g_coord_text->figure.x + 5,
+                                   g_coord_text->figure.y + (g_coord_text->figure.h - 16) / 2,
+                                   (char*)g_coord_text->txt,
+                                   g_coord_text->font_color,
+                                   g_coord_text->font_type,
+                                   g_coord_text->figure.bg_color);
+            }
+            return;
+        }
+        // 已经满足退出死区条件，清除死区标志并继续处理
+        g_in_dead_zone = 0;
+    }
+    
+    // 更新上次处理的坐标
+    g_last_processed_x = x;
+    g_last_processed_y = y;
+    
     // 更新坐标显示文本
     if (g_coord_text) {
         char coord_str[32];
-        sprintf(coord_str, "Touch: %3d, %3d (avg)", x, y);
+        sprintf(coord_str, "Touch: %3d, %3d (processed)", x, y);
         strcpy((char*)g_coord_text->txt, coord_str);
         
         // 重新绘制坐标文本区域
@@ -215,10 +372,13 @@ static void Process_Touch_Point(uint16_t x, uint16_t y)
     }
     
     // 检测按钮点击
+    uint8_t button_clicked = 0;
     for (uint8_t i = 0; i < g_ui_pool.button_count; i++) {
         LCD_Button_Struct* btn = &g_ui_pool.buttons[i];
         if (x >= btn->figure.x && x <= btn->figure.x + btn->figure.w &&
             y >= btn->figure.y && y <= btn->figure.y + btn->figure.h) {
+            
+            button_clicked = 1;
             
             // 按钮按下效果
             btn->pressed = 1;
@@ -242,6 +402,8 @@ static void Process_Touch_Point(uint16_t x, uint16_t y)
                                        g_info_text->font_type,
                                        g_info_text->figure.bg_color);
                 }
+                // 按钮点击后设置锁定，防止重复触发 (500ms)
+                Set_Touch_Lock(500);
             } else if (strcmp(btn->figure.inner_name, "btn_stop") == 0) {
                 g_running = 0;
                 if (g_info_text) {
@@ -256,6 +418,7 @@ static void Process_Touch_Point(uint16_t x, uint16_t y)
                                        g_info_text->font_type,
                                        g_info_text->figure.bg_color);
                 }
+                Set_Touch_Lock(500);
             } else if (strcmp(btn->figure.inner_name, "btn_clear") == 0) {
                 // 清空波形数据
                 if (g_waveform) {
@@ -274,15 +437,23 @@ static void Process_Touch_Point(uint16_t x, uint16_t y)
                                        g_info_text->font_type,
                                        g_info_text->figure.bg_color);
                 }
+                Set_Touch_Lock(500);
             } else if (strcmp(btn->figure.inner_name, "btn_touch_test") == 0) {
                 g_touch_test_mode = !g_touch_test_mode;
                 // 刷新所有 UI
                 UI_Test_DrawAll();
+                Set_Touch_Lock(300);
             }
             
             UI_Test_DrawAll();
             break;
         }
+    }
+    
+    // 如果点击了按钮，已经设置了锁定，不需要额外操作
+    // 如果没有点击按钮但触摸点有效，也设置一个短暂的锁定防止快速重复触摸
+    if (!button_clicked && (x != 0 || y != 0)) {
+        Set_Touch_Lock(100);
     }
 }
 
@@ -361,6 +532,12 @@ void UI_Test_HandleTouch(void)
                 g_last_touch_process_time = current_time;
             }
         }
+        
+        // 触摸抬起时，重置死区相关标志，避免下次触摸被错误锁定
+        if (g_touch_sample_valid_count == 0 && g_touch_sample_index == 0) {
+            g_in_dead_zone = 0;
+            // 注意：不重置 g_last_processed_x/y，保持上次处理坐标用于下次触摸的死区判断
+        }
     }
 }
 
@@ -435,10 +612,13 @@ void UI_Test_DrawAll(void)
     // 绘制波形控件
     Update_Waveform_Display();
     
-    // 更新状态栏信息 (包含采样信息)
-    char status[80];
-    sprintf(status, "UI Test | Touch: %d/%d samples | Interval: %dms",
-            g_touch_sample_valid_count, TOUCH_SAMPLE_COUNT, TOUCH_MIN_INTERVAL_MS);
+    // 更新状态栏信息 (包含采样信息和锁定状态)
+    char status[120];
+    sprintf(status, "UI Test | Samples: %d/%d | DeadZone: %dpx/%dms | Lock: %s | DeadZone: %s",
+            g_touch_sample_valid_count, TOUCH_SAMPLE_COUNT, 
+            TOUCH_DEAD_ZONE, TOUCH_DEAD_ZONE_UNLOCK_MS,
+            g_touch_locked ? "YES" : "NO",
+            g_in_dead_zone ? "ACTIVE" : "IDLE");
     BSP_LCD_DrawString(10, LCD_HEIGHT - 30, status, 0xFF95A5A6, 
                        ASCII_FONT_TYPE_8x16, 0xFF34495E);
 }
@@ -492,7 +672,7 @@ void UI_Test_Run(void)
         }
         
         // 简单的延时，避免CPU占用过高
-        // BSP_DWT_Delay_ms(20);
+        BSP_DWT_Delay_ms(10);
     }
 }
 
@@ -502,16 +682,25 @@ void UI_Test_Init(void)
     // 初始化 SDRAM、DWT、LCD 和触摸
     LCD_SDRAM_DWT_Init();
     
-    // 初始化触摸屏
-    Touch_I2C_GPIO_Config();
-    GT911_Reset_Sequence();
-    
     // 初始化触摸采样缓冲区
     memset(g_touch_samples_x, 0, sizeof(g_touch_samples_x));
     memset(g_touch_samples_y, 0, sizeof(g_touch_samples_y));
     g_touch_sample_index = 0;
     g_touch_sample_valid_count = 0;
     g_last_touch_process_time = 0;
+    
+    // 初始化触摸范围锁定变量
+    g_last_processed_x = 0;
+    g_last_processed_y = 0;
+    g_touch_locked = 0;
+    g_touch_lock_start_time = 0;
+    g_touch_lock_duration = 0;
+    
+    // 初始化死区相关变量
+    g_in_dead_zone = 0;
+    g_dead_zone_enter_time = 0;
+    g_dead_zone_x = 0;
+    g_dead_zone_y = 0;
     
     // 初始化 UI 内存池
     LCD_UI_Pool_Init();
@@ -527,7 +716,7 @@ void UI_Test_Init(void)
                                    ASCII_FONT_TYPE_8x16, LCD_COLOR_CYAN);
     
     // 创建坐标显示文本 (透明背景)
-    g_coord_text = LCD_UI_CreateTXT("coord", 20, 110, 300, 25,
+    g_coord_text = LCD_UI_CreateTXT("coord", 20, 110, 400, 25,
                                     LCD_COLOR_TRANSPARENT, "Touch: ---, ---",
                                     ASCII_FONT_TYPE_8x16, LCD_COLOR_YELLOW);
     
