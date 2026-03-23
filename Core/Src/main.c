@@ -31,7 +31,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "test_utils.h"
+#include "fast_test.h"
+#include "ui_test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,15 +53,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-#define FILTER_SIZE  10u  // 滤波窗口大小
 
-typedef struct {
-    uint32_t sum_x;
-    uint32_t sum_y;
-    uint16_t count;
-} Touch_Filter_t;
-
-Touch_Filter_t touch_filter = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,7 +125,9 @@ int main(void)
   MX_DAC1_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-	Test_Start();
+	UI_Test_Init();
+    
+  UI_Test_Run();
   /* USER CODE END 2 */
 
   /* Infinite loop */

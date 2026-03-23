@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_PWR_LDO_SUPPLY,USE_HAL_DRIVER,STM32H743xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\proj_bsp;..\proj_level1;..\proj_test;..\proj_value</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../proj_bsp;../proj_level1;../proj_test;../proj_value</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1529,50 +1529,40 @@
               <FileType>5</FileType>
               <FilePath>..\proj_level1\lcd_control.h</FilePath>
             </File>
+            <File>
+              <FileName>lcd_control_ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_level1\lcd_control_ui.c</FilePath>
+            </File>
+            <File>
+              <FileName>lcd_control_ui.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_level1\lcd_control_ui.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>proj_test</GroupName>
           <Files>
             <File>
-              <FileName>test.c</FileName>
+              <FileName>fast_test.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\proj_test\test.c</FilePath>
+              <FilePath>..\proj_test\fast_test.c</FilePath>
             </File>
             <File>
-              <FileName>test.h</FileName>
+              <FileName>fast_test.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\proj_test\test.h</FilePath>
+              <FilePath>..\proj_test\fast_test.h</FilePath>
             </File>
             <File>
-              <FileName>test_lcd_control.c</FileName>
+              <FileName>ui_test.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\proj_test\test_lcd_control.c</FilePath>
+              <FilePath>..\proj_test\ui_test.c</FilePath>
             </File>
             <File>
-              <FileName>test_lcd_control.h</FileName>
+              <FileName>ui_test.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\proj_test\test_lcd_control.h</FilePath>
-            </File>
-            <File>
-              <FileName>test_selector.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_test\test_selector.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_selector.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_test\test_selector.h</FilePath>
-            </File>
-            <File>
-              <FileName>test_utils.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_test\test_utils.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_utils.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_test\test_utils.h</FilePath>
+              <FilePath>..\proj_test\ui_test.h</FilePath>
             </File>
           </Files>
         </Group>

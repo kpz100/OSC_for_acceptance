@@ -26,5 +26,7 @@ void BSP_LCD_Init(void);
 void BSP_LCD_Clear(uint32_t color);
 void BSP_LCD_DrawPixel(uint16_t x, uint16_t y, uint32_t color);
 void BSP_LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint32_t color);
+void BSP_LCD_DrawRGBBlock(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint32_t *pBuffer);
+void BSP_LCD_DrawString(uint16_t x, uint16_t y, char* str, uint32_t color, uint8_t font_type, uint32_t bg_color);
 
 #endif
