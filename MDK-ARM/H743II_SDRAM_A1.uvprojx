@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_PWR_LDO_SUPPLY,USE_HAL_DRIVER,STM32H743xx,ARM_MATH_CM7</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../proj_bsp;../proj_level1;../proj_test;../proj_value</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../proj_bsp;../proj_level1;../proj_test;../proj_value;..\proj_lcd_main;..\proj_page</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1519,50 +1519,80 @@
               <FileType>5</FileType>
               <FilePath>..\proj_level1\tim_control.h</FilePath>
             </File>
-            <File>
-              <FileName>lcd_control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_level1\lcd_control.c</FilePath>
-            </File>
-            <File>
-              <FileName>lcd_control.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_level1\lcd_control.h</FilePath>
-            </File>
-            <File>
-              <FileName>lcd_control_ui.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_level1\lcd_control_ui.c</FilePath>
-            </File>
-            <File>
-              <FileName>lcd_control_ui.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_level1\lcd_control_ui.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>proj_test</GroupName>
           <Files>
             <File>
-              <FileName>fast_test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_test\fast_test.c</FilePath>
-            </File>
-            <File>
-              <FileName>fast_test.h</FileName>
+              <FileName>new_test1.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\proj_test\fast_test.h</FilePath>
+              <FilePath>..\proj_test\new_test1.h</FilePath>
             </File>
             <File>
-              <FileName>ui_test.c</FileName>
+              <FileName>new_test1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\proj_test\ui_test.c</FilePath>
+              <FilePath>..\proj_test\new_test1.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>proj_lcd_main</GroupName>
+          <Files>
+            <File>
+              <FileName>ui_rampool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_lcd_main\ui_rampool.c</FilePath>
             </File>
             <File>
-              <FileName>ui_test.h</FileName>
+              <FileName>ui_rampool.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\proj_test\ui_test.h</FilePath>
+              <FilePath>..\proj_lcd_main\ui_rampool.h</FilePath>
+            </File>
+            <File>
+              <FileName>ui_render.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_lcd_main\ui_render.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_render.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_lcd_main\ui_render.h</FilePath>
+            </File>
+            <File>
+              <FileName>ui_touch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_lcd_main\ui_touch.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_touch.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_lcd_main\ui_touch.h</FilePath>
+            </File>
+            <File>
+              <FileName>ui_type.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_lcd_main\ui_type.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>proj_page</GroupName>
+          <Files>
+            <File>
+              <FileName>osc_logic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_page\osc_logic.c</FilePath>
+            </File>
+            <File>
+              <FileName>osc_manager.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_page\osc_manager.h</FilePath>
+            </File>
+            <File>
+              <FileName>osc_page.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_page\osc_page.c</FilePath>
             </File>
           </Files>
         </Group>

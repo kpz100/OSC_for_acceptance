@@ -31,8 +31,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "fast_test.h"
-#include "ui_test.h"
+#include "new_test1.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -125,16 +124,15 @@ int main(void)
   MX_DAC1_Init();
   MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
-	UI_Test_Init();
-    
-  UI_Test_Run();
+	Test_Init();
+	Test_Loop();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

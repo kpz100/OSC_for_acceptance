@@ -1,19 +1,8 @@
 #include "dac_control.h"
-#include "adc.h"
-#include "tim_control.h"
-
 #include "dac.h"
-#include <stdint.h>
+#include "tim_control.h"
 #include <string.h>
 #include <math.h>
-
-#define DAC_LENGTH 100u
-#define DAC_CHANNEL_NUM 2u
-
-#define PI2 6.283185307f
-#define VERF 3.3f
-#define DOUBLE_VERF (2.0f * VERF)
-#define U12BIT 4095u
 
 typedef enum { 
     SIN_WAVE = 0, 
@@ -167,3 +156,4 @@ uint8_t Get_DAC_Status(uint8_t ch) {
     uint8_t sch = Switch_Channel_Input(ch);
     return ch_dac_config[sch].status;
 }
+
