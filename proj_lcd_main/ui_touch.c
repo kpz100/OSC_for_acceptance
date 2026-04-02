@@ -4,7 +4,7 @@
 #include <string.h>
 #include "bsp_dwt.h"
 
-#define DEADZONE_TIME_MS 200u // 建议设置为 200ms 左右
+#define DEADZONE_TIME_MS 300u // 建议设置为 300ms 左右
 
 // 纯粹的坐标范围判定
 static uint8_t Is_In_Rect(uint16_t x, uint16_t y, LCD_Figure_Struct* fig) {

@@ -23,6 +23,8 @@ void Tim_Control_Init(void) {
 	ch1_config.freq = 1000;
 	ch2_config.freq = 1000;
 	BSP_SI5351_Init();
+	BSP_SI5351_SetupCLK0(1000, 1);
+	BSP_SI5351_SetupCLK2(1000, 1);
 }
 
 uint32_t Get_Tim_Freq(uint8_t ch) {

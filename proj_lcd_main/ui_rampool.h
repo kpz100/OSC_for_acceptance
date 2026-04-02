@@ -6,7 +6,7 @@
 
 #define MAX_BUTTON_COUNT        50u
 #define MAX_TEXT_COUNT          50u
-#define MAX_WAVE_COUNT          10u
+#define MAX_WAVE_COUNT          2u
 
 typedef struct {
     uint8_t button_count;
@@ -18,7 +18,7 @@ typedef struct {
     LCD_Waveform_Struct waves[MAX_WAVE_COUNT];
 } LCD_UI_Pool_Struct;
 
-extern LCD_UI_Pool_Struct g_ui_pool __attribute__((section(".bss.ARM.__at_0xC0400000"))) __ALIGNED(32); // mpu关闭sdram的所有缓存
+extern LCD_UI_Pool_Struct g_ui_pool __attribute__((section(".bss.ARM.__at_0xC0600000"))) __ALIGNED(32); // mpu关闭sdram的所有缓存
 
 void LCD_UI_Pool_Init(void);
 LCD_TXT_Struct* LCD_UI_CreateTXT(const char* inner_name, uint16_t x, uint16_t y, uint16_t w, uint16_t h, 
@@ -28,5 +28,6 @@ LCD_Button_Struct* LCD_UI_CreateButton(const char* inner_name, uint16_t x, uint1
 LCD_Waveform_Struct* LCD_UI_CreateWaveform(const char* inner_name, uint16_t x, uint16_t y, uint16_t w, uint16_t h, 
                                            uint32_t bg_color, uint32_t line_color, uint32_t waveform_color0, uint32_t waveform_color1);
 void LCD_UI_ClearPool(void);
+void LCD_UI_Render_All(void);
 
 #endif

@@ -27,6 +27,8 @@
 #define RW_TARGET_NONE 0u
 #define RW_TARGET_FFT 1u
 #define RW_TARGET_SHOW 2u
+#define FFT_FLAG_TYPE 0u
+#define SHOW_FLAG_TYPE 1u
 
 void ADC_FFT_Init(void);
 void Control_ADC_Enable(uint8_t ch, uint8_t enable);
@@ -38,13 +40,15 @@ uint8_t Calc_Vpp8(uint8_t ch);
 uint32_t Calc_Rising_Edge_Pos(uint8_t ch);
 void Process_Show_Buffer(uint32_t ch, uint8_t * array, uint32_t length, uint8_t clear_after);
 uint8_t* Get_Show_Buffer(uint8_t ch);
+uint32_t Get_Available_Show_Length(uint32_t read_pos);
 
 void Callback_Control(uint8_t ch, uint32_t adc_wpos, uint32_t length);
 
 uint8_t Get_Vpp_8(uint8_t ch);
 float Get_FFT_Freq(uint8_t ch);
 float Get_Sample_Freq(uint8_t ch);
-uint8_t Get_ADC_Flag(uint8_t ch);
-void Clear_ADC_Flag(uint8_t ch, uint8_t next_target_type);
+uint8_t Get_ADC_Flag(uint8_t ch, uint8_t flag_type);
+void Set_Next_Target_Type(uint8_t ch, uint8_t target_type);
+void Clear_ADC_Flag(uint8_t ch, uint8_t flag_type);
 
 #endif

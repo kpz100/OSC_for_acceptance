@@ -1420,6 +1420,16 @@
               <FilePath>..\proj_bsp\bsp_dwt.h</FilePath>
             </File>
             <File>
+              <FileName>bsp_lcd_single.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_bsp\bsp_lcd_single.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_lcd_single.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_bsp\bsp_lcd_single.h</FilePath>
+            </File>
+            <File>
               <FileName>bsp_sdram.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\proj_bsp\bsp_sdram.c</FilePath>
@@ -1449,45 +1459,10 @@
               <FileType>5</FileType>
               <FilePath>..\proj_bsp\bsp_touch.h</FilePath>
             </File>
-            <File>
-              <FileName>bsp_lcd_single.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_bsp\bsp_lcd_single.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_lcd_single.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_bsp\bsp_lcd_single.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>proj_value</GroupName>
-          <Files>
-            <File>
-              <FileName>ascii_font.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_value\ascii_font.c</FilePath>
-            </File>
-            <File>
-              <FileName>ascii_font.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_value\ascii_font.h</FilePath>
-            </File>
-            <File>
-              <FileName>window_value.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_value\window_value.c</FilePath>
-            </File>
-            <File>
-              <FileName>window_value.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_value\window_value.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>proj_level1</GroupName>
+          <GroupName>proj_control</GroupName>
           <Files>
             <File>
               <FileName>adc_control.c</FileName>
@@ -1522,22 +1497,72 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>proj_test</GroupName>
+          <GroupName>proj_value</GroupName>
           <Files>
             <File>
-              <FileName>new_test1.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_test\new_test1.h</FilePath>
+              <FileName>ascii_font.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_value\ascii_font.c</FilePath>
             </File>
+            <File>
+              <FileName>ascii_font.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_value\ascii_font.h</FilePath>
+            </File>
+            <File>
+              <FileName>window_value.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_value\window_value.c</FilePath>
+            </File>
+            <File>
+              <FileName>window_value.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_value\window_value.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>proj_page</GroupName>
+          <Files>
+            <File>
+              <FileName>des_logic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_page\des_logic.c</FilePath>
+            </File>
+            <File>
+              <FileName>page_manager.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_page\page_manager.h</FilePath>
+            </File>
+            <File>
+              <FileName>osc_logic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_page\osc_logic.c</FilePath>
+            </File>
+            <File>
+              <FileName>gen_logic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\proj_page\gen_logic.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>proj_test</GroupName>
+          <Files>
             <File>
               <FileName>new_test1.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\proj_test\new_test1.c</FilePath>
             </File>
+            <File>
+              <FileName>new_test1.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\proj_test\new_test1.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>proj_lcd_main</GroupName>
+          <GroupName>proj_ui</GroupName>
           <Files>
             <File>
               <FileName>ui_rampool.c</FileName>
@@ -1548,16 +1573,6 @@
               <FileName>ui_rampool.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\proj_lcd_main\ui_rampool.h</FilePath>
-            </File>
-            <File>
-              <FileName>ui_render.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_lcd_main\ui_render.c</FilePath>
-            </File>
-            <File>
-              <FileName>ui_render.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_lcd_main\ui_render.h</FilePath>
             </File>
             <File>
               <FileName>ui_touch.c</FileName>
@@ -1573,26 +1588,6 @@
               <FileName>ui_type.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\proj_lcd_main\ui_type.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>proj_page</GroupName>
-          <Files>
-            <File>
-              <FileName>osc_logic.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_page\osc_logic.c</FilePath>
-            </File>
-            <File>
-              <FileName>osc_manager.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\proj_page\osc_manager.h</FilePath>
-            </File>
-            <File>
-              <FileName>osc_page.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\proj_page\osc_page.c</FilePath>
             </File>
           </Files>
         </Group>

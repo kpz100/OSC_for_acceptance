@@ -48,9 +48,11 @@ void Control_DAC_Enable(uint8_t ch, uint8_t enable) {
         Calc_DAC_Buffer(ch);
         if (ch == 1) {
             HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)ch_dac_config[sch].dac_buffer, DAC_LENGTH, DAC_ALIGN_12B_R);
+			Set_Tim_Freq(1, ch_dac_config[sch].freq * DAC_LENGTH);
             Control_Tim_Clk(1, 1);
         } else if (ch == 2) {
             HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_2, (uint32_t*)ch_dac_config[sch].dac_buffer, DAC_LENGTH, DAC_ALIGN_12B_R);
+			Set_Tim_Freq(2, ch_dac_config[sch].freq * DAC_LENGTH);
             Control_Tim_Clk(2, 1);
         }
     } else {

@@ -4,9 +4,11 @@
 #include "main.h"
 
 struct LCD_TXT_Struct;
-typedef void (*TXTMethod)(struct LCD_TXT_Struct* self);
+typedef void (*TXTMethod)(struct LCD_TXT_Struct* self, const char* txt);
+
 struct LCD_Button_Struct;
 typedef void (*ButtonMethod)(struct LCD_Button_Struct* self);
+
 struct LCD_Waveform_Struct;
 typedef void (*WaveformMethod)(struct LCD_Waveform_Struct* self, void* buffer, size_t _type, uint32_t true_maxval, uint32_t length, uint32_t color);
 typedef void (*WavedrawMehtod)(struct LCD_Waveform_Struct* self);
@@ -24,7 +26,7 @@ typedef void (*WavedrawMehtod)(struct LCD_Waveform_Struct* self);
 typedef enum {
     UI_TXT = 0,
     UI_BUTTON,
-    UI_WAVEFORM
+    UI_WAVEFORM,
 } UI_TYPE;
 
 typedef struct LCD_Figure_Struct{

@@ -1,8 +1,9 @@
 #include "ui_rampool.h"
 #include "ui_type.h"
 #include <string.h>
+#include "bsp_lcd_single.h"
 
-LCD_UI_Pool_Struct g_ui_pool __attribute__((section(".bss.ARM.__at_0xC0400000"))) __ALIGNED(32);
+LCD_UI_Pool_Struct g_ui_pool __attribute__((section(".bss.ARM.__at_0xC0600000"))) __ALIGNED(32);
 
 void LCD_UI_Pool_Init(void) {
     memset(&g_ui_pool, 0, sizeof(LCD_UI_Pool_Struct));
@@ -90,4 +91,19 @@ void LCD_UI_ClearPool(void) {
     LCD_UI_Pool_Init();
 }
 
-
+void LCD_UI_Render_All(void) {
+    for (int i = 0; i < g_ui_pool.txt_count; i++) {
+        LCD_TXT_Struct* p_txt = &g_ui_pool.texts[i];
+        BSP_LCD_FillRect(p_txt->figure.x, p_txt->figure.y, p_txt->figure.w, p_txt->figure.h, p_txt->figure.bg_color);
+        BSP_LCD_DrawString(p_txt->figure.x + FONT_OFFSET_X, p_txt->figure.y + FONT_OFFSET_Y, p_txt->txt, p_txt->font_color, p_txt->font_type, p_txt->figure.bg_color);
+    }
+    for (int i = 0; i < g_ui_pool.button_count; i++) {
+        LCD_Button_Struct* btn = &g_ui_pool.buttons[i];
+        BSP_LCD_FillRect(btn->figure.x, btn->figure.y, btn->figure.w, btn->figure.h, btn->figure.bg_color);
+        BSP_LCD_DrawString(btn->figure.x + FONT_OFFSET_X, btn->figure.y + FONT_OFFSET_Y, btn->txt, btn->font_color, btn->font_type, btn->figure.bg_color);
+    }
+    for (int i = 0; i < g_ui_pool.wave_count; i++) {
+        LCD_Waveform_Struct* wf = &g_ui_pool.waves[i];
+        BSP_LCD_FillRect(wf->figure.x, wf->figure.y, wf->figure.w, wf->figure.h, wf->figure.bg_color);
+    }
+}

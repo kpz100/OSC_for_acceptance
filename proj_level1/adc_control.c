@@ -9,8 +9,9 @@
 typedef struct {
 	uint32_t fft_wpos;
 	uint32_t show_wpos;
-    uint8_t running;
-    uint8_t rw_target; // 0=NONE,1=FFT,2=SHOW
+	uint8_t fft_flag;
+	uint8_t show_flag;
+    uint8_t rw_target; // 0=NONE,1=FFT,2=SHOW // 这个变量的意义在于：当ADC完成一次DMA传输时，回调函数会根据这个变量决定下一步处理哪个目标的数据（FFT或SHOW），并在处理完成后更新这个变量以指示下一次应该处理哪个目标。这样可以实现对FFT和SHOW数据的交替处理，确保两者都能及时更新显示。
 } ADC_Running_Struct;
 
 typedef struct {
@@ -34,7 +35,6 @@ static float fft_buffer[ADC_CHANNEL_NUM][FFT_LENGTH]
 
 static float mag_buffer[ADC_CHANNEL_NUM][MAG_LENGTH] 
     __attribute__((section(".bss.ARM.__at_0x24006000"))) __ALIGNED(32);
-static volatile uint8_t over_flag[ADC_CHANNEL_NUM] = {0};
 
 static FFT_Max_Struct ch_fft_config[ADC_CHANNEL_NUM];
 static ADC_Show_Struct ch_show_config[ADC_CHANNEL_NUM];
@@ -59,9 +59,6 @@ void ADC_FFT_Init(void) {
 	memset(ch_show_config, 0, sizeof(ADC_Show_Struct) * ADC_CHANNEL_NUM);
 	memset(ch_running_config, 0, sizeof(ADC_Running_Struct) * ADC_CHANNEL_NUM);
 
-	over_flag[0] = 0;
-	over_flag[1] = 0;
-	
 	the_window = get_window(FFT_LENGTH);
 	arm_rfft_fast_init_f32(&fft_handler, FFT_LENGTH);
 
@@ -79,11 +76,12 @@ void Control_ADC_Enable(uint8_t ch, uint8_t enable) {
     ADC_HandleTypeDef* adc_handler = (ch == 1) ? &hadc1 : &hadc2;
     if (enable) {
         memset(adc_buffer[sch], 0, sizeof(uint8_t) * ADC_LENGTH);
-        ch_running_config[sch].running = 1;
+        ch_running_config[sch].rw_target = RW_TARGET_FFT;
         HAL_ADCEx_Calibration_Start(adc_handler, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 		HAL_ADC_Start_DMA(adc_handler, (uint32_t *)adc_buffer[sch], ADC_LENGTH);
 		Control_Tim_Clk(ch, 1);
     } else {
+		ch_running_config[sch].rw_target = RW_TARGET_NONE;
         Control_Tim_Clk(ch, 0);
         HAL_ADC_Stop_DMA(adc_handler);
     }
@@ -91,7 +89,7 @@ void Control_ADC_Enable(uint8_t ch, uint8_t enable) {
 
 // ===========================================
 
-// 1说明完成，0没有完成
+// 1说明频率命中频谱两个平行最高峰的中间，0没有完成
 uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
     if (ch != 1 && ch != 2) return 0;
 
@@ -107,8 +105,9 @@ uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
 
 	arm_rfft_fast_f32(&fft_handler, fft_buffer[sch], fft_buffer[sch], 0);
 	arm_cmplx_mag_f32(fft_buffer[sch], mag_buffer[sch], MAG_LENGTH);
-	arm_max_f32(&mag_buffer[sch][1], MAG_LENGTH - 1, &ch_fft_config[sch].first_mag_max, &ch_fft_config[sch].first_max_index);
-	ch_fft_config[sch].first_max_index += 1;
+	// arm_max_f32(&mag_buffer[sch][1], MAG_LENGTH - 1, &ch_fft_config[sch].first_mag_max, &ch_fft_config[sch].first_max_index);
+	// ch_fft_config[sch].first_max_index += 1;
+	arm_max_f32(mag_buffer[sch], MAG_LENGTH, &ch_fft_config[sch].first_mag_max, &ch_fft_config[sch].first_max_index);
 
 	ch_fft_config[sch].second_max_index = ch_fft_config[sch].first_max_index + 1;
 	ch_fft_config[sch].second_mag_max = mag_buffer[sch][ch_fft_config[sch].second_max_index];
@@ -162,8 +161,9 @@ uint32_t Calc_Rising_Edge_Pos(uint8_t ch) {
 	
 	uint8_t sch = Switch_Channel_Input(ch);
 	uint32_t rising_pos = 0;
+	uint8_t threshold = ch_show_config[sch].Vpp_8 / 2;
 	for (int i = 0; i < SHOW_LENGTH - 1; i++) {
-		if (show_buffer[sch][i] <= ch_show_config[sch].Vpp_8 / 2 && show_buffer[sch][i + 1] >= ch_show_config[sch].Vpp_8 / 2) {
+		if (show_buffer[sch][i] <= threshold && show_buffer[sch][i + 1] >= threshold) {
 			rising_pos = i;
 			break;
 		}
@@ -190,8 +190,14 @@ uint8_t* Get_Show_Buffer(uint8_t ch) {
 	return show_buffer[sch];
 }
 
+uint32_t Get_Available_Show_Length(uint32_t read_pos) {
+	uint32_t available_length = SHOW_LENGTH - read_pos;
+	return (available_length > 0) ? available_length : 0;
+}
+
 // ====================================
 
+// 当采集完adc数组后便会停下
 void Callback_Control(uint8_t ch, uint32_t adc_wpos, uint32_t length) {
     if (ch != 1 && ch != 2) return;
 	
@@ -202,10 +208,12 @@ void Callback_Control(uint8_t ch, uint32_t adc_wpos, uint32_t length) {
 			fft_buffer[sch][fft_wpos] = (float)adc_buffer[sch][(adc_wpos + i) % ADC_LENGTH];
 			fft_wpos++;
 		}
+		ch_running_config[sch].fft_wpos = fft_wpos;
+
 		if (fft_wpos >= FFT_LENGTH) {
 			ch_running_config[sch].rw_target = RW_TARGET_NONE;
 			ch_running_config[sch].fft_wpos = 0;
-			over_flag[sch] = 1;
+			ch_running_config[sch].fft_flag = 1;
 		}
 	} else if (ch_running_config[sch].rw_target == RW_TARGET_SHOW && ch_running_config[sch].show_wpos < SHOW_LENGTH) {
 		uint32_t show_wpos = ch_running_config[sch].show_wpos;
@@ -213,10 +221,12 @@ void Callback_Control(uint8_t ch, uint32_t adc_wpos, uint32_t length) {
 			show_buffer[sch][show_wpos]	= adc_buffer[sch][(adc_wpos + i) % ADC_LENGTH];
 			show_wpos++;
 		}
+		ch_running_config[sch].show_wpos = show_wpos;
+
 		if (show_wpos >= SHOW_LENGTH) {
 			ch_running_config[sch].rw_target = RW_TARGET_NONE;
 			ch_running_config[sch].show_wpos = 0;
-			over_flag[sch] = 1;
+			ch_running_config[sch].show_flag = 1;
 		}
 	}
 }
@@ -265,26 +275,38 @@ float Get_Sample_Freq(uint8_t ch) {
 	return 0.0f;
 }
 
-uint8_t Get_ADC_Flag(uint8_t ch) {
+uint8_t Get_ADC_Flag(uint8_t ch, uint8_t flag_type) {
 	if (ch == 1 || ch == 2) {
 		uint8_t sch = Switch_Channel_Input(ch);
-		return over_flag[sch];
+		if (flag_type == FFT_FLAG_TYPE) {
+			return ch_running_config[sch].fft_flag;
+		} else if (flag_type == SHOW_FLAG_TYPE) {
+			return ch_running_config[sch].show_flag;
+		}
 	}
 	return 0;
 }
 
-void Clear_ADC_Flag(uint8_t ch, uint8_t next_target_type) {
+void Set_Next_Target_Type(uint8_t ch, uint8_t target_type) {
 	if (ch == 1 || ch == 2) {
 		uint8_t sch = Switch_Channel_Input(ch);
-		over_flag[sch] = 0;
-		if (next_target_type == RW_TARGET_FFT) {
-			ch_running_config[sch].fft_wpos = 0;
-			ch_running_config[sch].rw_target = RW_TARGET_FFT;
-		} else if (next_target_type == RW_TARGET_SHOW) {
-			ch_running_config[sch].show_wpos = 0;
-			ch_running_config[sch].rw_target = RW_TARGET_SHOW;
+		if (target_type == RW_TARGET_FFT || target_type == RW_TARGET_SHOW) {
+			ch_running_config[sch].rw_target = target_type;
 		} else {
 			ch_running_config[sch].rw_target = RW_TARGET_NONE;
+		}
+	}
+}
+
+void Clear_ADC_Flag(uint8_t ch, uint8_t flag_type) {
+	if (ch == 1 || ch == 2) {
+		uint8_t sch = Switch_Channel_Input(ch);
+		if (flag_type == FFT_FLAG_TYPE) {
+			ch_running_config[sch].fft_flag = 0;
+			
+		} else if (flag_type == SHOW_FLAG_TYPE) {
+			ch_running_config[sch].show_flag = 0;
+
 		}
 	}
 }

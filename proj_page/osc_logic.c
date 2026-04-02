@@ -1,5 +1,201 @@
-#include "osc_manager.h"
+#include "page_manager.h"
+#include "ui_rampool.h"
+#include "ui_type.h"
+#include "ui_touch.h"
+
+#include "bsp_dwt.h"
+#include "bsp_lcd_single.h"
+
+#include <string.h>
+#include <stdio.h>
+
+#include "ascii_font.h"
 #include "adc_control.h"
 #include "tim_control.h"
-#include <string.h>
 
+#ifndef abs
+#define abs(x) ((x) > 0) ? (x) : -(x)
+#endif
+
+uint8_t osc_config = 0;
+
+static LCD_Waveform_Struct* wf_show_lcd = NULL; // MAX为最大宽高
+static LCD_Button_Struct* btn_return_des = NULL;
+static LCD_Button_Struct* btn_control_ch1 = NULL;
+static LCD_Button_Struct* btn_control_ch2 = NULL;
+static LCD_TXT_Struct* txt_ch1_vpp_fft  = NULL;
+static LCD_TXT_Struct* txt_ch2_vpp_fft  = NULL;
+
+static void Buffer_SetPixel(LCD_Waveform_Struct* self, uint16_t x, uint16_t y, uint32_t color) {
+    if (x >= self->figure.w || y >= self->figure.h) return;
+    self->osc_draw_buffer[y * self->figure.w + x] = color;
+}
+
+static void Buffer_DrawLine(LCD_Waveform_Struct* self, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color) {
+    int16_t dx = abs(x2 - x1);
+    int16_t dy = abs(y2 - y1);
+    int16_t sx = (x1 < x2) ? 1 : -1;
+    int16_t sy = (y1 < y2) ? 1 : -1;
+    int16_t err = dx - dy;
+    int16_t e2;
+
+    while (1) {
+        Buffer_SetPixel(self, x1, y1, color);
+        if (x1 == x2 && y1 == y2) break;
+        e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x1 += sx; }
+        if (e2 < dx) { err += dx; y1 += sy; }
+    }
+}
+
+static void DrawIn_Buffer(LCD_Waveform_Struct* self, void* buffer, size_t _type, uint32_t true_maxval, uint32_t length, uint32_t color) {
+    if (!self || !buffer || length == 0 || true_maxval == 0) return;
+
+    float x_ratio = (float)length / self->figure.w;
+    if (x_ratio < 1.0f) x_ratio = 1.0f;
+    uint16_t last_x = 0;
+    uint16_t last_y = 0;
+    uint8_t first_point = 1;
+
+    for (uint16_t x = 0; x < self->figure.w; x++) {
+        uint32_t data_idx = (uint32_t)(x * x_ratio);
+        if (data_idx >= length) break;
+
+        uint32_t raw_val = 0;
+        if (_type == 1) raw_val = ((uint8_t*)buffer)[data_idx];
+        else if (_type == 2) raw_val = ((uint16_t*)buffer)[data_idx];
+        else if (_type == 4) raw_val = ((uint32_t*)buffer)[data_idx];
+
+        if (raw_val > true_maxval) raw_val = true_maxval;
+        uint16_t screen_y = (uint16_t)((uint64_t)(true_maxval - raw_val) * (self->figure.h - 1) / true_maxval);
+
+        if (first_point) {
+            Buffer_SetPixel(self, x, screen_y, color);
+            first_point = 0;
+        } else {
+            Buffer_DrawLine(self, last_x, last_y, x, screen_y, color);
+        }
+        last_x = x; last_y = screen_y;
+    }
+}
+
+static void DrawTo_LCD(LCD_Waveform_Struct* self) {
+    if (!self) return;
+    BSP_LCD_DrawRGBBlock(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->osc_draw_buffer);
+}
+
+static void On_Return_Click(LCD_Button_Struct* self) {
+    osc_config = 0;
+    self->figure.bg_color = LCD_COLOR_YELLOW;
+    BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
+    BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
+    BSP_DWT_Delay_ms(200);
+    des_config = 1;
+}
+
+static void On_Channel_Toggle(LCD_Button_Struct* self) {
+    if (strcmp(self->figure.inner_name, "btn_ch1") == 0) {
+        self->figure.bg_color = (self->figure.bg_color == LCD_COLOR_DARKGREEN) ? 0xFF333333 : LCD_COLOR_DARKGREEN;
+        self->clicked = (self->clicked == 0) ? 1 : 0;
+        BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
+        BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
+        Control_ADC_Enable(1, self->clicked);
+        // TODO:按钮控制(ok)
+    } else if (strcmp(self->figure.inner_name, "btn_ch2") == 0){
+        self->figure.bg_color = (self->figure.bg_color == LCD_COLOR_RED) ? 0xFF333333 : LCD_COLOR_RED;
+        self->clicked = (self->clicked == 0) ? 1 : 0;
+        BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
+        BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
+        Control_ADC_Enable(2, self->clicked);
+        // 同理
+    }
+}
+
+static void Refresh_TXT(LCD_TXT_Struct* self, const char* txt) {
+    BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, txt, self->font_color, self->font_type, self->figure.bg_color);
+}
+
+static void OSC_FFT_Running(uint8_t ch) {
+    if (Get_ADC_Flag(ch, FFT_FLAG_TYPE)) {
+        uint8_t fft_ok = Calc_Comp_FFT_Ampl(ch);
+        if (fft_ok) {
+            float fft_freq = Get_FFT_Freq(ch);
+            if (fft_freq < MAX_OVER_SAMPLE_FREQ) {
+                Set_Sample_Freq(ch, fft_freq * OVER_SAMPLE_RATE);
+            } else {
+                Set_Sample_Freq(ch, fft_freq * (1.0f - 1.0f / ETS_SAMPLE_RATE));
+            }
+
+            Clear_ADC_Flag(ch, FFT_FLAG_TYPE);
+            Set_Next_Target_Type(ch, RW_TARGET_SHOW);
+        } else {
+            Set_Sample_Freq(ch, Get_Sample_Freq(ch) - SAMPLE_FREQ_SHIFT);
+
+            Clear_ADC_Flag(ch, FFT_FLAG_TYPE);
+            Set_Next_Target_Type(ch, RW_TARGET_FFT);
+        }
+    } 
+}
+
+static void OSC_Perform_Running(uint8_t ch) {
+    if (Get_ADC_Flag(ch, SHOW_FLAG_TYPE)) {
+        Calc_Vpp8(ch);
+
+        uint8_t* show_buffer = Get_Show_Buffer(ch);
+        uint32_t RE_pos = Calc_Rising_Edge_Pos(ch);
+        uint32_t available_length = Get_Available_Show_Length(RE_pos);
+        
+        wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
+
+        Clear_ADC_Flag(ch, SHOW_FLAG_TYPE);
+        Set_Next_Target_Type(ch, RW_TARGET_FFT);
+        Set_Sample_Freq(ch, ORIGINAL_SAMPLE_FREQ);
+    }
+}
+
+static void OSC_Vpp_Freq_Refresh(uint8_t ch) {
+    float vpp = Get_Vpp(ch);
+    float freq = Get_FFT_Freq(ch);
+    char txt[64] = {0};
+    sprintf(txt, "CH%d: Vpp=%.2fV Freq=%.2fHz", ch, vpp, freq);
+    if (ch == 1) {
+        txt_ch1_vpp_fft->refresh_txt(txt_ch1_vpp_fft, txt);
+    } else {
+        txt_ch2_vpp_fft->refresh_txt(txt_ch2_vpp_fft, txt);
+    }
+}
+
+void OSC_Core_Init(void) {
+    Tim_Control_Init();
+    ADC_FFT_Init();
+}
+
+void OSC_Page_Init(void) {
+    osc_config = 1;
+
+    LCD_UI_ClearPool();
+    BSP_LCD_Clear(LCD_COLOR_BLACK); 
+
+    btn_return_des = LCD_UI_CreateButton("btn_return", 10, 10, 80, 40, LCD_COLOR_DARKGREEN, "ReturnDES", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_return_des->on_click = On_Return_Click;
+
+    btn_control_ch1 = LCD_UI_CreateButton("btn_ch1", 10, 360, 60, 50, LCD_COLOR_DARKGREEN, "CH1", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_control_ch2 = LCD_UI_CreateButton("btn_ch2", 10, 420, 60, 50, LCD_COLOR_RED, "CH2", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_control_ch1->on_click = On_Channel_Toggle;
+    btn_control_ch2->on_click = On_Channel_Toggle;
+
+    txt_ch1_vpp_fft = LCD_UI_CreateTXT("ch1_vpp_fft", 80, 360, 220, 32, LCD_COLOR_BLUE, "CH1: Vpp=0.00V Freq=0.00Hz", ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
+    txt_ch2_vpp_fft = LCD_UI_CreateTXT("ch2_vpp_fft", 80, 420, 220, 32, LCD_COLOR_BLUE, "CH2: Vpp=0.00V Freq=0.00Hz", ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
+    txt_ch1_vpp_fft->refresh_txt = Refresh_TXT;
+    txt_ch2_vpp_fft->refresh_txt = Refresh_TXT;
+
+    wf_show_lcd = LCD_UI_CreateWaveform("wf_show", 0, 60, MAX_OSC_WIDTH, MAX_OSC_HEIGHT, LCD_COLOR_WHITE, LCD_COLOR_DARKGREEN, LCD_COLOR_GREEN, LCD_COLOR_RED);
+    wf_show_lcd->drawin_buffer = DrawIn_Buffer;
+    wf_show_lcd->drawto_lcd = DrawTo_LCD;
+
+    LCD_UI_Render_All();
+}
+
+void OSC_Logic_Running(void) {
+    
+}

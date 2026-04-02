@@ -6,8 +6,6 @@
 #define LCD_WIDTH             800
 #define LCD_HEIGHT            480
 
-#define LCD_WIDTH             800
-#define LCD_HEIGHT            480
 #define SDRAM_START_ADDR      0xC0000000
 #define LCD_FRAME_SIZE        (LCD_WIDTH * LCD_HEIGHT * 4)
 

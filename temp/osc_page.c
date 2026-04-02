@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "adc_control.h"
 #include "bsp_dwt.h"
 
 #ifndef abs
@@ -21,7 +22,7 @@ uint8_t Get_OSC_Config(void) {
     return osc_config;
 }
 
-static LCD_Waveform_Struct* wf_show_lcd = NULL; // MAX为最大宽高
+LCD_Waveform_Struct* wf_show_lcd = NULL; // MAX为最大宽高
 static LCD_Button_Struct* btn_return_des = NULL;
 static LCD_Button_Struct* btn_control_ch1 = NULL;
 static LCD_Button_Struct* btn_control_ch2 = NULL;
@@ -98,18 +99,26 @@ static void DrawTo_LCD(LCD_Waveform_Struct* self) {
 
 static void On_Return_Click(LCD_Button_Struct* self) {
     osc_config = 0;
+    self->figure.bg_color = LCD_COLOR_YELLOW;
+    BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
+    BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
+    BSP_DWT_Delay_ms(200);
 }
 
 static void On_Channel_Toggle(LCD_Button_Struct* self) {
     if (strcmp(self->figure.inner_name, "btn_ch1") == 0) {
         self->figure.bg_color = (self->figure.bg_color == LCD_COLOR_DARKGREEN) ? 0xFF333333 : LCD_COLOR_DARKGREEN;
         self->clicked = (self->clicked == 0) ? 1 : 0;
+        BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
+        Control_ADC_Enable(1, self->clicked);
         // TODO:按钮控制
     } else if (strcmp(self->figure.inner_name, "btn_ch2") == 0){
         self->figure.bg_color = (self->figure.bg_color == LCD_COLOR_RED) ? 0xFF333333 : LCD_COLOR_RED;
         self->clicked = (self->clicked == 0) ? 1 : 0;
+        BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
+        Control_ADC_Enable(2, self->clicked);
         // 同理
     }
 }
