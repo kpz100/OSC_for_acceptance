@@ -12,7 +12,7 @@ void DES_Page_Init(void);
 
 void OSC_Core_Init(void);
 void OSC_Page_Init(void);
-void OSC_Page_Refresh_Data(float vpp1, float fft1, float vpp2, float fft2);
+void OSC_Logic_Running(void);
 
 void GEN_Core_Init(void);
 void GEN_Page_Init(void);

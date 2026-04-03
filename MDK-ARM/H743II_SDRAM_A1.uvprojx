@@ -1592,6 +1592,9 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>proj_mcore</GroupName>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>

@@ -39,7 +39,7 @@ void Test_Init(void)
     
     DES_Page_Init();
 	
-    BSP_DWT_Delay_ms(1000); // 等待页面初始化
+    BSP_DWT_Delay_ms(100); // 等待页面初始化
 }
 
 void si5351_test(void) {
@@ -73,13 +73,15 @@ void Test_Loop(void)
         }
         if (osc_config) {
             OSC_Page_Init();
+            OSC_Core_Init();
             while (osc_config) {
                 Page_Touch_Logic();
+                OSC_Logic_Running();
             }
         }
         if (gen_config) {
             GEN_Page_Init();
-            DAC_Output_Init();
+            GEN_Core_Init();
             while (gen_config) {
                 uint8_t changed = Page_Touch_Logic();
                 GEN_Logic_Running(changed);

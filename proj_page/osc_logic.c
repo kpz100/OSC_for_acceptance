@@ -13,11 +13,17 @@
 #include "adc_control.h"
 #include "tim_control.h"
 
+#define SHOW_DELAY_MS 1000u
+#define FFT_DELAY_MS 500u
+
 #ifndef abs
 #define abs(x) ((x) > 0) ? (x) : -(x)
 #endif
 
 uint8_t osc_config = 0;
+
+uint32_t fft_tick = 0;
+uint32_t show_tick = 0;
 
 static LCD_Waveform_Struct* wf_show_lcd = NULL; // MAX为最大宽高
 static LCD_Button_Struct* btn_return_des = NULL;
@@ -137,24 +143,8 @@ static void OSC_FFT_Running(uint8_t ch) {
     } 
 }
 
-static void OSC_Perform_Running(uint8_t ch) {
-    if (Get_ADC_Flag(ch, SHOW_FLAG_TYPE)) {
-        Calc_Vpp8(ch);
-
-        uint8_t* show_buffer = Get_Show_Buffer(ch);
-        uint32_t RE_pos = Calc_Rising_Edge_Pos(ch);
-        uint32_t available_length = Get_Available_Show_Length(RE_pos);
-        
-        wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
-
-        Clear_ADC_Flag(ch, SHOW_FLAG_TYPE);
-        Set_Next_Target_Type(ch, RW_TARGET_FFT);
-        Set_Sample_Freq(ch, ORIGINAL_SAMPLE_FREQ);
-    }
-}
-
 static void OSC_Vpp_Freq_Refresh(uint8_t ch) {
-    float vpp = Get_Vpp(ch);
+    float vpp = (float)Get_Vpp_8(ch) * 3.3f / 255.0f;
     float freq = Get_FFT_Freq(ch);
     char txt[64] = {0};
     sprintf(txt, "CH%d: Vpp=%.2fV Freq=%.2fHz", ch, vpp, freq);
@@ -165,7 +155,34 @@ static void OSC_Vpp_Freq_Refresh(uint8_t ch) {
     }
 }
 
+static uint8_t OSC_Perform_Running(uint8_t ch) {
+    if (Get_ADC_Flag(ch, SHOW_FLAG_TYPE)) {
+        Calc_Vpp8(ch);
+
+        uint8_t* show_buffer = Get_Show_Buffer(ch);
+        uint32_t RE_pos = Calc_Rising_Edge_Pos(ch);
+        uint32_t available_length = Get_Available_Show_Length(RE_pos);
+        
+        wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
+		// wf_show_lcd->drawto_lcd(wf_show_lcd);
+
+        Clear_ADC_Flag(ch, SHOW_FLAG_TYPE);
+        Set_Next_Target_Type(ch, RW_TARGET_FFT);
+        Set_Sample_Freq(ch, ORIGINAL_SAMPLE_FREQ);
+		
+		OSC_Vpp_Freq_Refresh(ch);
+		
+		return 1;
+    }
+	return 0;
+}
+
+
+
 void OSC_Core_Init(void) {
+	fft_tick = 0;
+	show_tick = 0;
+	
     Tim_Control_Init();
     ADC_FFT_Init();
 }
@@ -197,5 +214,8 @@ void OSC_Page_Init(void) {
 }
 
 void OSC_Logic_Running(void) {
-    
+    for (uint8_t ch = 1; ch <= 2; ch++) {
+        OSC_FFT_Running(ch);
+        OSC_Perform_Running(ch);
+    }
 }

@@ -50,6 +50,13 @@ static uint8_t inline Switch_Channel_Input(uint8_t ch) {
 	return 0;
 }
 
+static void Inner_Set_Freq(uint8_t ch, uint32_t freq) {
+	if (ch == 1 || ch == 2) {
+		Set_Tim_Freq(ch, freq);
+		ch_show_config[Switch_Channel_Input(ch)].sample_freq = (float)freq;
+	}
+}
+
 void ADC_FFT_Init(void) {
 	memset(adc_buffer, 0, sizeof(uint8_t) * ADC_CHANNEL_NUM * ADC_LENGTH);
 	memset(show_buffer, 0, sizeof(uint8_t) * ADC_CHANNEL_NUM * SHOW_LENGTH);
@@ -63,8 +70,11 @@ void ADC_FFT_Init(void) {
 	arm_rfft_fast_init_f32(&fft_handler, FFT_LENGTH);
 
 	Control_Tim_Clk(1, 0);
+	Inner_Set_Freq(1, ORIGINAL_SAMPLE_FREQ);
 	HAL_ADC_Stop_DMA(&hadc1);
+
 	Control_Tim_Clk(2, 0);
+	Inner_Set_Freq(2, ORIGINAL_SAMPLE_FREQ);
 	HAL_ADC_Stop_DMA(&hadc2);
 }
 
@@ -76,9 +86,12 @@ void Control_ADC_Enable(uint8_t ch, uint8_t enable) {
     ADC_HandleTypeDef* adc_handler = (ch == 1) ? &hadc1 : &hadc2;
     if (enable) {
         memset(adc_buffer[sch], 0, sizeof(uint8_t) * ADC_LENGTH);
+
         ch_running_config[sch].rw_target = RW_TARGET_FFT;
         HAL_ADCEx_Calibration_Start(adc_handler, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 		HAL_ADC_Start_DMA(adc_handler, (uint32_t *)adc_buffer[sch], ADC_LENGTH);
+
+		Inner_Set_Freq(ch, ORIGINAL_SAMPLE_FREQ);
 		Control_Tim_Clk(ch, 1);
     } else {
 		ch_running_config[sch].rw_target = RW_TARGET_NONE;
@@ -133,10 +146,19 @@ uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
 // 注意get_freq
 void Set_Sample_Freq(uint8_t ch, uint32_t freq) {
     if (ch != 1 && ch != 2) return; 
+	
+	uint8_t sch = Switch_Channel_Input(ch);
+	ADC_HandleTypeDef* adc_handler = (ch == 1) ? &hadc1 : &hadc2;
 
-    Control_ADC_Enable(ch, 0);
-    Set_Tim_Freq(ch, freq);
-    Control_ADC_Enable(ch, 1);
+    Control_Tim_Clk(ch, 0);
+    HAL_ADC_Stop_DMA(adc_handler);
+	memset(adc_buffer[sch], 0, sizeof(uint8_t) * ADC_LENGTH);
+	
+    Inner_Set_Freq(ch, freq);
+    
+	HAL_ADCEx_Calibration_Start(adc_handler, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
+	HAL_ADC_Start_DMA(adc_handler, (uint32_t *)adc_buffer[sch], ADC_LENGTH);
+	Control_Tim_Clk(ch, 1);
 }
 
 // ======================================================
