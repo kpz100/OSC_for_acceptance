@@ -13,6 +13,9 @@
 #include "adc_control.h"
 #include "tim_control.h"
 
+#define MAX_FILLED_LENGTH 10u
+static const char filled_txt[MAX_FILLED_LENGTH] = "         "; // 10 spaces for clearing text
+
 #define SHOW_DELAY_MS 1000u
 #define FFT_DELAY_MS 500u
 
@@ -87,7 +90,9 @@ static void DrawIn_Buffer(LCD_Waveform_Struct* self, void* buffer, size_t _type,
 
 static void DrawTo_LCD(LCD_Waveform_Struct* self) {
     if (!self) return;
+	BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
     BSP_LCD_DrawRGBBlock(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->osc_draw_buffer);
+	memset(self->osc_draw_buffer, 0, sizeof(self->osc_draw_buffer));
 }
 
 static void On_Return_Click(LCD_Button_Struct* self) {
@@ -106,6 +111,11 @@ static void On_Channel_Toggle(LCD_Button_Struct* self) {
         BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
         Control_ADC_Enable(1, self->clicked);
+        if (self->clicked == 0) {
+            Clear_ADC_Flag(1, FFT_FLAG_TYPE);
+            Clear_ADC_Flag(1, SHOW_FLAG_TYPE);
+            Set_Next_Target_Type(1, RW_TARGET_NONE);
+        }
         // TODO:按钮控制(ok)
     } else if (strcmp(self->figure.inner_name, "btn_ch2") == 0){
         self->figure.bg_color = (self->figure.bg_color == LCD_COLOR_RED) ? 0xFF333333 : LCD_COLOR_RED;
@@ -113,6 +123,11 @@ static void On_Channel_Toggle(LCD_Button_Struct* self) {
         BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
         Control_ADC_Enable(2, self->clicked);
+        if (self->clicked == 0) {
+            Clear_ADC_Flag(2, FFT_FLAG_TYPE);
+            Clear_ADC_Flag(2, SHOW_FLAG_TYPE);
+            Set_Next_Target_Type(2, RW_TARGET_NONE);
+        }
         // 同理
     }
 }
@@ -132,6 +147,8 @@ static void OSC_FFT_Running(uint8_t ch) {
                 Set_Sample_Freq(ch, fft_freq * (1.0f - 1.0f / ETS_SAMPLE_RATE));
             }
 
+            printf("Set CH%d Sample Freq to %.2fHz\n", ch, Get_Sample_Freq(ch));
+
             Clear_ADC_Flag(ch, FFT_FLAG_TYPE);
             Set_Next_Target_Type(ch, RW_TARGET_SHOW);
         } else {
@@ -146,8 +163,11 @@ static void OSC_FFT_Running(uint8_t ch) {
 static void OSC_Vpp_Freq_Refresh(uint8_t ch) {
     float vpp = (float)Get_Vpp_8(ch) * 3.3f / 255.0f;
     float freq = Get_FFT_Freq(ch);
+
+    printf("Vpp: CH%d=%.2fV, Freq=%.2fHz\n", ch, vpp, freq);
+
     char txt[64] = {0};
-    sprintf(txt, "CH%d: Vpp=%.2fV Freq=%.2fHz", ch, vpp, freq);
+    sprintf(txt, "CH%d: Vpp=%.2fV Freq=%.2fHz%s", ch, vpp, freq, filled_txt); // 使用filled_txt清除旧文本残留
     if (ch == 1) {
         txt_ch1_vpp_fft->refresh_txt(txt_ch1_vpp_fft, txt);
     } else {
@@ -164,7 +184,12 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
         uint32_t available_length = Get_Available_Show_Length(RE_pos);
         
         wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
-		// wf_show_lcd->drawto_lcd(wf_show_lcd);
+		// if ((BSP_DWT_GetDelta_us(show_tick, BSP_DWT_GetCounter()) > (1000.0f * 2000.0f))) {
+		// 	wf_show_lcd->drawto_lcd(wf_show_lcd);
+		// 	show_tick = BSP_DWT_GetCounter();
+		// }
+
+        printf("Show: CH%d Available_Length=%lu\n", ch, available_length);
 
         Clear_ADC_Flag(ch, SHOW_FLAG_TYPE);
         Set_Next_Target_Type(ch, RW_TARGET_FFT);
@@ -172,6 +197,8 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
 		
 		OSC_Vpp_Freq_Refresh(ch);
 		
+        printf("Next Rank\n\n");
+
 		return 1;
     }
 	return 0;
@@ -201,8 +228,11 @@ void OSC_Page_Init(void) {
     btn_control_ch1->on_click = On_Channel_Toggle;
     btn_control_ch2->on_click = On_Channel_Toggle;
 
-    txt_ch1_vpp_fft = LCD_UI_CreateTXT("ch1_vpp_fft", 80, 360, 220, 32, LCD_COLOR_BLUE, "CH1: Vpp=0.00V Freq=0.00Hz", ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
-    txt_ch2_vpp_fft = LCD_UI_CreateTXT("ch2_vpp_fft", 80, 420, 220, 32, LCD_COLOR_BLUE, "CH2: Vpp=0.00V Freq=0.00Hz", ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
+    char temp_txt[64] = {0};
+    sprintf(temp_txt, "CH1: Vpp=0.00V Freq=0.00Hz%s", filled_txt);
+    txt_ch1_vpp_fft = LCD_UI_CreateTXT("ch1_vpp_fft", 80, 360, 220, 32, LCD_COLOR_BLUE, temp_txt, ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
+    sprintf(temp_txt, "CH2: Vpp=0.00V Freq=0.00Hz%s", filled_txt);
+    txt_ch2_vpp_fft = LCD_UI_CreateTXT("ch2_vpp_fft", 80, 420, 220, 32, LCD_COLOR_BLUE, temp_txt, ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
     txt_ch1_vpp_fft->refresh_txt = Refresh_TXT;
     txt_ch2_vpp_fft->refresh_txt = Refresh_TXT;
 

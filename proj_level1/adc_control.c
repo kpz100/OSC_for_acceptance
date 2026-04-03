@@ -2,6 +2,7 @@
 #include "tim_control.h"
 #include "window_value.h"
 
+#include <stdio.h>
 #include <string.h>
 #include "arm_math.h"
 #include "arm_const_structs.h"
@@ -90,9 +91,9 @@ void Control_ADC_Enable(uint8_t ch, uint8_t enable) {
         ch_running_config[sch].rw_target = RW_TARGET_FFT;
         HAL_ADCEx_Calibration_Start(adc_handler, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 		HAL_ADC_Start_DMA(adc_handler, (uint32_t *)adc_buffer[sch], ADC_LENGTH);
-
-		Inner_Set_Freq(ch, ORIGINAL_SAMPLE_FREQ);
 		Control_Tim_Clk(ch, 1);
+
+		printf("Enable ADC CH%d with Sample Freq %.2fHz\n", ch, Get_Sample_Freq(ch));
     } else {
 		ch_running_config[sch].rw_target = RW_TARGET_NONE;
         Control_Tim_Clk(ch, 0);
@@ -130,13 +131,22 @@ uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
         float sample_freq = (float)Get_Tim_Freq(ch);
 		ch_show_config[sch].fft_freq = ((float)ch_fft_config[sch].first_max_index + 0.5f) * sample_freq / (float)FFT_LENGTH;
 		ch_fft_config[sch].fft_running_time = 0;
+
+		printf("FFT: CH%d Freq=%.2fHz, Peak_Error=%.2f%%, Running_Time=%d\n", ch, ch_show_config[sch].fft_freq, fft_peak_error * 100.0f, ch_fft_config[sch].fft_running_time);
+
 		return 1;
     } else {
         ch_fft_config[sch].fft_running_time++;
+
+		printf("Nowtime Sample Freq=%.2fHz\n", Get_Sample_Freq(ch));
+
 		if (ch_fft_config[sch].fft_running_time >= SHIFT_MAX_RANK) {
 			float sample_freq = (float)Get_Tim_Freq(ch);
 			ch_show_config[sch].fft_freq = (float)ch_fft_config[sch].first_max_index * sample_freq / (float)FFT_LENGTH;
 			ch_fft_config[sch].fft_running_time = 0;
+
+			printf("FFT: CH%d Freq=%.2fHz, Peak_Error=%.2f%%, Running_Time=%d\n", ch, ch_show_config[sch].fft_freq, fft_peak_error * 100.0f, ch_fft_config[sch].fft_running_time);
+
 			return 1;
 		}
 		return 0;
