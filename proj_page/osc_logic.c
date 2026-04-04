@@ -60,6 +60,11 @@ static void Buffer_DrawLine(LCD_Waveform_Struct* self, uint16_t x1, uint16_t y1,
 static void DrawIn_Buffer(LCD_Waveform_Struct* self, void* buffer, size_t _type, uint32_t true_maxval, uint32_t length, uint32_t color) {
     if (!self || !buffer || length == 0 || true_maxval == 0) return;
 
+    uint32_t total_pixels = self->figure.w * self->figure.h;
+    for (uint32_t i = 0; i < total_pixels; i++) {
+        self->osc_draw_buffer[i] = self->figure.bg_color;
+    }
+
     float x_ratio = (float)length / self->figure.w;
     if (x_ratio < 1.0f) x_ratio = 1.0f;
     uint16_t last_x = 0;
@@ -90,9 +95,9 @@ static void DrawIn_Buffer(LCD_Waveform_Struct* self, void* buffer, size_t _type,
 
 static void DrawTo_LCD(LCD_Waveform_Struct* self) {
     if (!self) return;
-	BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
     BSP_LCD_DrawRGBBlock(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->osc_draw_buffer);
 	memset(self->osc_draw_buffer, 0, sizeof(self->osc_draw_buffer));
+    BSP_DWT_Delay_ms(1000); // 避免过快刷新导致的显示问题
 }
 
 static void On_Return_Click(LCD_Button_Struct* self) {
@@ -184,10 +189,11 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
         uint32_t available_length = Get_Available_Show_Length(RE_pos);
         
         wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
-		// if ((BSP_DWT_GetDelta_us(show_tick, BSP_DWT_GetCounter()) > (1000.0f * 2000.0f))) {
-		// 	wf_show_lcd->drawto_lcd(wf_show_lcd);
-		// 	show_tick = BSP_DWT_GetCounter();
-		// }
+		if ((BSP_DWT_GetCounter() - show_tick) > (500 * (SystemCoreClock / 1000))) {
+			wf_show_lcd->drawto_lcd(wf_show_lcd);
+			show_tick = BSP_DWT_GetCounter();
+            BSP_DWT_Delay_ms(50);
+		}
 
         printf("Show: CH%d Available_Length=%lu\n", ch, available_length);
 
