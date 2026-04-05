@@ -1,0 +1,12 @@
+{
+  "timestamp": "05-Apr-2026 17:01:47",
+  "total_time_ms": 29806.838,
+  "total": 4000,
+  "successful": 3910,
+  "success_rate": 97.75,
+  "mean_iterations": 68.55575,
+  "mean_error": 1.386715715020389,
+  "std_error": 1.3356790202622286,
+  "max_error": 5.4747553665502853,
+  "min_error": 0.0083017237531896743
+}

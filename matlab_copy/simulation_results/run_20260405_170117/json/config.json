@@ -1,0 +1,10 @@
+{
+  "fs_nominal": 3.6E+6,
+  "fs_step": 10000,
+  "fft_points": 1024,
+  "max_amp_diff_percent": 5,
+  "duration": 0.01,
+  "adc_bits": 8,
+  "num_simulations": 4000,
+  "num_workers": 16
+}

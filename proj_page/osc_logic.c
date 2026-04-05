@@ -13,9 +13,6 @@
 #include "adc_control.h"
 #include "tim_control.h"
 
-#define MAX_FILLED_LENGTH 10u
-static const char filled_txt[MAX_FILLED_LENGTH] = "         "; // 10 spaces for clearing text
-
 #define SHOW_DELAY_MS 1000u
 #define FFT_DELAY_MS 500u
 
@@ -97,15 +94,15 @@ static void DrawTo_LCD(LCD_Waveform_Struct* self) {
     if (!self) return;
     BSP_LCD_DrawRGBBlock(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->osc_draw_buffer);
 	memset(self->osc_draw_buffer, 0, sizeof(self->osc_draw_buffer));
-    BSP_DWT_Delay_ms(1000); // 避免过快刷新导致的显示问题
+    BSP_DWT_Delay_ms(100); // 避免过快刷新导致的显示问题
 }
 
 static void On_Return_Click(LCD_Button_Struct* self) {
     osc_config = 0;
     self->figure.bg_color = LCD_COLOR_YELLOW;
-    BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
+	BSP_LCD_FillRect(self->figure.x, self->figure.y, self->figure.w, self->figure.h, self->figure.bg_color);
     BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
-    BSP_DWT_Delay_ms(200);
+    BSP_DWT_Delay_ms(100);
     des_config = 1;
 }
 
@@ -189,11 +186,8 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
         uint32_t available_length = Get_Available_Show_Length(RE_pos);
         
         wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
-		if ((BSP_DWT_GetCounter() - show_tick) > (500 * (SystemCoreClock / 1000))) {
-			wf_show_lcd->drawto_lcd(wf_show_lcd);
-			show_tick = BSP_DWT_GetCounter();
-            BSP_DWT_Delay_ms(50);
-		}
+
+		wf_show_lcd->drawto_lcd(wf_show_lcd);
 
         printf("Show: CH%d Available_Length=%lu\n", ch, available_length);
 

@@ -240,7 +240,7 @@ static void Button_Vpp_Adjust(LCD_Button_Struct* self) {
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
 
         char txt[MAX_TXT_LENGTH] = {0};
-        sprintf(txt, "CH1: Vpp=%.1fV Freq=%uHz Duty=%u%%", current_vpp, Get_DAC_Freq(1), Get_DAC_Duty(1));
+        sprintf(txt, "CH1: Vpp=%.1fV Freq=%uHz Duty=%u%%%s", current_vpp, Get_DAC_Freq(1), Get_DAC_Duty(1), filled_txt);
         Set_DAC_Vpp(1, current_vpp);
 
         txt_ch1_vpp_freq->refresh_txt(txt_ch1_vpp_freq, txt);
@@ -266,7 +266,7 @@ static void Button_Vpp_Adjust(LCD_Button_Struct* self) {
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
 
         char txt[MAX_TXT_LENGTH] = {0};
-        sprintf(txt, "CH2: Vpp=%.1fV Freq=%uHz Duty=%u%%", current_vpp, Get_DAC_Freq(2), Get_DAC_Duty(2));
+        sprintf(txt, "CH2: Vpp=%.1fV Freq=%uHz Duty=%u%%%s", current_vpp, Get_DAC_Freq(2), Get_DAC_Duty(2), filled_txt);
         Set_DAC_Vpp(2, current_vpp);
         txt_ch2_vpp_freq->refresh_txt(txt_ch2_vpp_freq, txt);
     }
@@ -300,7 +300,7 @@ static void Button_Freq_Adjust(LCD_Button_Struct* self) {
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
 
         char txt[MAX_TXT_LENGTH] = {0};
-        sprintf(txt, "CH1: Vpp=%.1fV Freq=%uHz Duty=%u%%", Get_DAC_Vpp(1), current_freq, Get_DAC_Duty(1));
+        sprintf(txt, "CH1: Vpp=%.1fV Freq=%uHz Duty=%u%%%s", Get_DAC_Vpp(1), current_freq, Get_DAC_Duty(1), filled_txt);
         Set_DAC_Freq(1, current_freq);
         txt_ch1_vpp_freq->refresh_txt(txt_ch1_vpp_freq, txt);
     } else if ((strcmp(self->figure.inner_name, "freq_plus_ch2") == 0) || (strcmp(self->figure.inner_name, "freq_minus_ch2") == 0)) {
@@ -325,7 +325,7 @@ static void Button_Freq_Adjust(LCD_Button_Struct* self) {
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
 
         char txt[MAX_TXT_LENGTH] = {0};
-        sprintf(txt, "CH2: Vpp=%.1fV Freq=%uHz Duty=%u%%", Get_DAC_Vpp(2), current_freq, Get_DAC_Duty(2));
+        sprintf(txt, "CH2: Vpp=%.1fV Freq=%uHz Duty=%u%%%s", Get_DAC_Vpp(2), current_freq, Get_DAC_Duty(2), filled_txt);
         Set_DAC_Freq(2, current_freq);
         txt_ch2_vpp_freq->refresh_txt(txt_ch2_vpp_freq, txt);
     }
@@ -359,7 +359,7 @@ static void Button_Duty_Adjust(LCD_Button_Struct* self) {
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
 
         char txt[MAX_TXT_LENGTH] = {0};
-        sprintf(txt, "CH1: Vpp=%.1fV Freq=%uHz Duty=%u%%", Get_DAC_Vpp(1), Get_DAC_Freq(1), current_duty);
+        sprintf(txt, "CH1: Vpp=%.1fV Freq=%uHz Duty=%u%%%s", Get_DAC_Vpp(1), Get_DAC_Freq(1), current_duty, filled_txt);
         Set_DAC_Duty(1, current_duty);
         txt_ch1_vpp_freq->refresh_txt(txt_ch1_vpp_freq, txt);
     } else if ((strcmp(self->figure.inner_name, "duty_plus_ch2") == 0) || (strcmp(self->figure.inner_name, "duty_minus_ch2") == 0)) {
@@ -384,7 +384,7 @@ static void Button_Duty_Adjust(LCD_Button_Struct* self) {
         BSP_LCD_DrawString(self->figure.x + FONT_OFFSET_X, self->figure.y + FONT_OFFSET_Y, self->txt, self->font_color, self->font_type, self->figure.bg_color);
 
         char txt[MAX_TXT_LENGTH] = {0};
-        sprintf(txt, "CH2: Vpp=%.1fV Freq=%uHz Duty=%u%%", Get_DAC_Vpp(2), Get_DAC_Freq(2), current_duty);
+        sprintf(txt, "CH2: Vpp=%.1fV Freq=%uHz Duty=%u%%%s", Get_DAC_Vpp(2), Get_DAC_Freq(2), current_duty, filled_txt);
         Set_DAC_Duty(2, current_duty);
         txt_ch2_vpp_freq->refresh_txt(txt_ch2_vpp_freq, txt);
     }
@@ -403,50 +403,56 @@ void GEN_Page_Init(void) {
     btn_return_des = LCD_UI_CreateButton("btn_return", 10, 10, 80, 40, LCD_COLOR_DARKGREEN, "ReturnDES", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_return_des->on_click = On_Return_Click;
 
-    btn_control_ch1 = LCD_UI_CreateButton("btn_ch1", 20, 160, 60, 50, LCD_COLOR_DARKGREEN, "CH1", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_control_ch1->on_click = On_Channel_Toggle;
-    btn_control_ch2 = LCD_UI_CreateButton("btn_ch2", 400, 160, 60, 50, LCD_COLOR_RED, "CH2", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_control_ch2->on_click = On_Channel_Toggle;
-
-    txt_ch1_vpp_freq = LCD_UI_CreateTXT("ch1_vpp_freq", 80, 160, 220, 32, LCD_COLOR_BLUE, "CH1: Vpp=3.0V Freq=1000Hz Duty=50%%", ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
+	char temp[64] = {0};
+	sprintf(temp, "CH1: Vpp=3.0V Freq=1000Hz Duty=50%%%s", filled_txt);
+    txt_ch1_vpp_freq = LCD_UI_CreateTXT("ch1_vpp_freq", 20, 170, 260, 32, LCD_COLOR_BLUE, temp, ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
     txt_ch1_vpp_freq->refresh_txt = Refresh_TXT;
-    txt_ch2_vpp_freq = LCD_UI_CreateTXT("ch2_vpp_freq", 460, 160, 220, 32, LCD_COLOR_BLUE, "CH2: Vpp=3.0V Freq=1000Hz Duty=50%%", ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
+	sprintf(temp, "CH2: Vpp=3.0V Freq=1000Hz Duty=50%%%s", filled_txt);
+    txt_ch2_vpp_freq = LCD_UI_CreateTXT("ch2_vpp_freq", 460, 170, 260, 32, LCD_COLOR_BLUE, temp, ASCII_FONT_TYPE_8x16, LCD_COLOR_WHITE);
     txt_ch2_vpp_freq->refresh_txt = Refresh_TXT;
-	
-	btn_wftype_ch1 = LCD_UI_CreateButton("wf_ch1", 20, 220, 60, 50, LCD_COLOR_DARKGREEN, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+
+    btn_control_ch1 = LCD_UI_CreateButton("btn_ch1", 20, 210, 80, 50, LCD_COLOR_DARKGREEN, "CH1", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_control_ch1->on_click = On_Channel_Toggle;
+    btn_wftype_ch1 = LCD_UI_CreateButton("wf_ch1", 110, 210, 80, 50, LCD_COLOR_DARKGREEN, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_wftype_ch1->on_click = Button_Waveform_Type;
-    btn_wftype_ch2 = LCD_UI_CreateButton("wf_ch2", 400, 220, 60, 50, LCD_COLOR_RED, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+
+    btn_vpp_plus_ch1 = LCD_UI_CreateButton("vpp_plus_ch1", 20, 270, 80, 50, LCD_COLOR_DARKGREEN, "100mV+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_vpp_plus_ch1->on_click = Button_Vpp_Adjust;
+    btn_vpp_minus_ch1 = LCD_UI_CreateButton("vpp_minus_ch1", 110, 270, 80, 50, LCD_COLOR_DARKGREEN, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_vpp_minus_ch1->on_click = Button_Vpp_Adjust;
+
+    btn_freq_plus_ch1 = LCD_UI_CreateButton("freq_plus_ch1", 20, 330, 80, 50, LCD_COLOR_DARKGREEN, "1kHz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_freq_plus_ch1->on_click = Button_Freq_Adjust;
+    btn_freq_minus_ch1 = LCD_UI_CreateButton("freq_minus_ch1", 110, 330, 80, 50, LCD_COLOR_DARKGREEN, "1kHz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_freq_minus_ch1->on_click = Button_Freq_Adjust;
+
+    btn_duty_plus_ch1 = LCD_UI_CreateButton("duty_plus_ch1", 20, 390, 80, 50, LCD_COLOR_DARKGREEN, "1%+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_duty_plus_ch1->on_click = Button_Duty_Adjust;
+    btn_duty_minus_ch1 = LCD_UI_CreateButton("duty_minus_ch1", 110, 390, 80, 50, LCD_COLOR_DARKGREEN, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_duty_minus_ch1->on_click = Button_Duty_Adjust;
+
+    btn_control_ch2 = LCD_UI_CreateButton("btn_ch2", 460, 210, 80, 50, LCD_COLOR_RED, "CH2", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_control_ch2->on_click = On_Channel_Toggle;
+    btn_wftype_ch2 = LCD_UI_CreateButton("wf_ch2", 550, 210, 80, 50, LCD_COLOR_RED, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_wftype_ch2->on_click = Button_Waveform_Type;
 
-    btn_vpp_plus_ch1 = LCD_UI_CreateButton("vpp_plus_ch1", 20, 280, 60, 50, LCD_COLOR_DARKGREEN, "100mV+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_vpp_plus_ch1->on_click = Button_Vpp_Adjust;
-    btn_vpp_minus_ch1 = LCD_UI_CreateButton("vpp_minus_ch1", 80, 280, 60, 50, LCD_COLOR_DARKGREEN, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_vpp_minus_ch1->on_click = Button_Vpp_Adjust;
-    btn_vpp_plus_ch2 = LCD_UI_CreateButton("vpp_plus_ch2", 400, 280, 60, 50, LCD_COLOR_RED, "100mV+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_vpp_plus_ch2 = LCD_UI_CreateButton("vpp_plus_ch2", 460, 270, 80, 50, LCD_COLOR_RED, "100mV+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_vpp_plus_ch2->on_click = Button_Vpp_Adjust;
-    btn_vpp_minus_ch2 = LCD_UI_CreateButton("vpp_minus_ch2", 460, 280, 60, 50, LCD_COLOR_RED, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_vpp_minus_ch2 = LCD_UI_CreateButton("vpp_minus_ch2", 550, 270, 80, 50, LCD_COLOR_RED, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_vpp_minus_ch2->on_click = Button_Vpp_Adjust;
 
-    btn_freq_plus_ch1 = LCD_UI_CreateButton("freq_plus_ch1", 20, 340, 60, 50, LCD_COLOR_DARKGREEN, "1kHz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_freq_plus_ch1->on_click = Button_Freq_Adjust;
-    btn_freq_minus_ch1 = LCD_UI_CreateButton("freq_minus_ch1", 80, 340, 60, 50, LCD_COLOR_DARKGREEN, "1kHz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_freq_minus_ch1->on_click = Button_Freq_Adjust;
-    btn_freq_plus_ch2 = LCD_UI_CreateButton("freq_plus_ch2", 400, 340, 60, 50, LCD_COLOR_RED, "1kHz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_freq_plus_ch2 = LCD_UI_CreateButton("freq_plus_ch2", 460, 330, 80, 50, LCD_COLOR_RED, "1kHz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_freq_plus_ch2->on_click = Button_Freq_Adjust;
-    btn_freq_minus_ch2 = LCD_UI_CreateButton("freq_minus_ch2", 460, 340, 60, 50, LCD_COLOR_RED, "1kHz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_freq_minus_ch2 = LCD_UI_CreateButton("freq_minus_ch2", 550, 330, 80, 50, LCD_COLOR_RED, "1kHz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_freq_minus_ch2->on_click = Button_Freq_Adjust;
 
-    btn_duty_plus_ch1 = LCD_UI_CreateButton("duty_plus_ch1", 20, 400, 60, 50, LCD_COLOR_DARKGREEN, "1%+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_duty_plus_ch1->on_click = Button_Duty_Adjust;
-    btn_duty_minus_ch1 = LCD_UI_CreateButton("duty_minus_ch1", 80, 400, 60, 50, LCD_COLOR_DARKGREEN, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
-    btn_duty_minus_ch1->on_click = Button_Duty_Adjust;
-    btn_duty_plus_ch2 = LCD_UI_CreateButton("duty_plus_ch2", 400, 400, 60, 50, LCD_COLOR_RED, "1%+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_duty_plus_ch2 = LCD_UI_CreateButton("duty_plus_ch2", 460, 390, 80, 50, LCD_COLOR_RED, "1%+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_duty_plus_ch2->on_click = Button_Duty_Adjust;
-    btn_duty_minus_ch2 = LCD_UI_CreateButton("duty_minus_ch2", 460, 400, 60, 50, LCD_COLOR_RED, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+    btn_duty_minus_ch2 = LCD_UI_CreateButton("duty_minus_ch2", 550, 390, 80, 50, LCD_COLOR_RED, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
     btn_duty_minus_ch2->on_click = Button_Duty_Adjust;
 
-    Create_GPS(&gen_pic_ch1, 80, 60, 120, 80, LCD_COLOR_WHITE, LCD_COLOR_RED, SINE_TYPE, 3);
-    Create_GPS(&gen_pic_ch2, 440, 60, 120, 80, LCD_COLOR_WHITE, LCD_COLOR_RED, SINE_TYPE, 3);
+    Create_GPS(&gen_pic_ch1, 20, 60, 240, 100, LCD_COLOR_WHITE, LCD_COLOR_DARKGREEN, SINE_TYPE, 3);
+    Create_GPS(&gen_pic_ch2, 460, 60, 240, 100, LCD_COLOR_WHITE, LCD_COLOR_RED, SINE_TYPE, 3);
     Switch_Picture_Waveform_Draw(&gen_pic_ch1, gen_pic_ch1.wf_type);
     Switch_Picture_Waveform_Draw(&gen_pic_ch2, gen_pic_ch2.wf_type);
 

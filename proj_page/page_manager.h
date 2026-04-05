@@ -18,4 +18,7 @@ void GEN_Core_Init(void);
 void GEN_Page_Init(void);
 void GEN_Logic_Running(uint8_t changed);
 
+#define MAX_FILLED_LENGTH 10u
+static const char filled_txt[MAX_FILLED_LENGTH] = "         "; // 10 spaces for clearing text
+
 #endif

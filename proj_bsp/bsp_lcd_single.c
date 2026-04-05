@@ -27,31 +27,44 @@ void BSP_LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint32_t c
 
     uint32_t dest_addr = (uint32_t)SDRAM_START_ADDR + ((y * LCD_WIDTH + x) * 4);
 
-    hdma2d.Instance->OOR = LCD_WIDTH - w;
-    
-    if (HAL_DMA2D_Start(&hdma2d, color, dest_addr, w, h) == HAL_OK) {
-        HAL_DMA2D_PollForTransfer(&hdma2d, 50);
+    // 每次填充前确保模式正确，防止被 DrawRGBBlock 修改后的状态干扰
+    hdma2d.Instance = DMA2D;
+    hdma2d.Init.Mode = DMA2D_R2M;
+    hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+    hdma2d.Init.OutputOffset = LCD_WIDTH - w; 
+
+    if (HAL_DMA2D_Init(&hdma2d) == HAL_OK) {
+        // 启动前清理目标区域的 Cache，防止 CPU 读取到旧的 Cache 数据
+        SCB_CleanInvalidateDCache_by_Addr((uint32_t *)dest_addr, h * LCD_WIDTH * 4);
+        
+        if (HAL_DMA2D_Start(&hdma2d, color, dest_addr, w, h) == HAL_OK) {
+            HAL_DMA2D_PollForTransfer(&hdma2d, 50);
+        }
     }
 }
 
 void BSP_LCD_DrawRGBBlock(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint32_t *pBuffer)
 {
-    // 计算目标地址偏移
     uint32_t dest_addr = (uint32_t)SDRAM_START_ADDR + ((y * LCD_WIDTH + x) * 4);
 
-    // 配置 DMA2D 为内存到内存 (M2M) 模式
     hdma2d.Instance = DMA2D;
     hdma2d.Init.Mode = DMA2D_M2M; 
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
-    hdma2d.Init.OutputOffset = LCD_WIDTH - w; // 跳过屏幕不需要更新的部分
+    hdma2d.Init.OutputOffset = LCD_WIDTH - w; 
     
     if (HAL_DMA2D_Init(&hdma2d) == HAL_OK)
     {
-        // 如果开启了 D-Cache，刷屏前必须清洗 LVGL 缓冲区地址，防止 DMA 搬运旧数据
+        // 1. 将 CPU 修改过的 pBuffer 同步到内存，供 DMA2D 读取
         SCB_CleanDCache_by_Addr(pBuffer, w * h * 4);
         
-        HAL_DMA2D_Start(&hdma2d, (uint32_t)pBuffer, dest_addr, w, h);
-        HAL_DMA2D_PollForTransfer(&hdma2d, 10); // 等待搬运完成
+        // 2. 使目标地址的 Cache 失效，确保传输完成后 CPU 必须从内存读取新数据
+        SCB_InvalidateDCache_by_Addr((uint32_t *)dest_addr, h * LCD_WIDTH * 4);
+        
+        if (HAL_DMA2D_Start(&hdma2d, (uint32_t)pBuffer, dest_addr, w, h) == HAL_OK) {
+            HAL_DMA2D_PollForTransfer(&hdma2d, 100);
+        }
+        
+        // 注意：不需要在这里“手动切回”，FillRect 启动时会自己重新 Init。
     }
 }
 
