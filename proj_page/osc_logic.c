@@ -189,7 +189,7 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
 
 		wf_show_lcd->drawto_lcd(wf_show_lcd);
 
-        printf("Show: CH%d Available_Length=%lu\n", ch, available_length);
+        printf("Show: CH%d Available_Length=%u\n", ch, available_length);
 
         Clear_ADC_Flag(ch, SHOW_FLAG_TYPE);
         Set_Next_Target_Type(ch, RW_TARGET_FFT);

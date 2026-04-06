@@ -18,7 +18,11 @@ typedef struct {
     LCD_Waveform_Struct waves[MAX_WAVE_COUNT];
 } LCD_UI_Pool_Struct;
 
-extern LCD_UI_Pool_Struct g_ui_pool __attribute__((section(".bss.ARM.__at_0xC0600000"))) __ALIGNED(32); // mpu关闭sdram的所有缓存
+extern LCD_UI_Pool_Struct g_ui_pool 
+    __attribute__((section(".bss.LCD_UI_RAMPOOL"))) __ALIGNED(32);
+
+// extern LCD_UI_Pool_Struct g_ui_pool 
+//     __attribute__((section(".bss.sdram_data"))) __ALIGNED(32); // mpu关闭sdram的所有缓存
 
 void LCD_UI_Pool_Init(void);
 LCD_TXT_Struct* LCD_UI_CreateTXT(const char* inner_name, uint16_t x, uint16_t y, uint16_t w, uint16_t h, 

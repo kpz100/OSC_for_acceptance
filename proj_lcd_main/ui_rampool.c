@@ -3,7 +3,11 @@
 #include <string.h>
 #include "bsp_lcd_single.h"
 
-LCD_UI_Pool_Struct g_ui_pool __attribute__((section(".bss.ARM.__at_0xC0600000"))) __ALIGNED(32);
+LCD_UI_Pool_Struct g_ui_pool 
+    __attribute__((section(".bss.LCD_UI_RAMPOOL"))) __ALIGNED(32);
+
+// LCD_UI_Pool_Struct g_ui_pool 
+//     __attribute__((section(".bss.sdram_data"))) __ALIGNED(32);
 
 void LCD_UI_Pool_Init(void) {
     memset(&g_ui_pool, 0, sizeof(LCD_UI_Pool_Struct));

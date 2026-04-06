@@ -29,13 +29,31 @@ typedef struct {
 	uint8_t Vpp_8;
 } ADC_Show_Struct;
 
-static uint8_t adc_buffer[ADC_CHANNEL_NUM][ADC_LENGTH] __attribute__((section(".bss.ARM.__at_0x30000000"))) __ALIGNED(32);
-static uint8_t show_buffer[ADC_CHANNEL_NUM][SHOW_LENGTH] __attribute__((section(".bss.ARM.__at_0x30000800"))) __ALIGNED(32);
+static uint8_t adc_buffer[ADC_CHANNEL_NUM][ADC_LENGTH] 
+    __attribute__((section(".bss.MPU_REGION_2"))) __ALIGNED(32);
+
+static uint8_t show_buffer[ADC_CHANNEL_NUM][SHOW_LENGTH] 
+    __attribute__((section(".bss.MPU_REGION_2"))) __ALIGNED(32);
+
 static float fft_buffer[ADC_CHANNEL_NUM][FFT_LENGTH] 
-    __attribute__((section(".bss.ARM.__at_0x24004000"))) __ALIGNED(32);
+    __attribute__((section(".bss.MPU_REGION_1"))) __ALIGNED(32);
 
 static float mag_buffer[ADC_CHANNEL_NUM][MAG_LENGTH] 
-    __attribute__((section(".bss.ARM.__at_0x24006000"))) __ALIGNED(32);
+    __attribute__((section(".bss.MPU_REGION_1"))) __ALIGNED(32);
+
+
+
+// static uint8_t adc_buffer[ADC_CHANNEL_NUM][ADC_LENGTH] 
+// 	__attribute__((section(".bss.dma_buffer"))) __ALIGNED(32);
+
+// static uint8_t show_buffer[ADC_CHANNEL_NUM][SHOW_LENGTH] 
+// 	__attribute__((section(".bss.dma_buffer"))) __ALIGNED(32);
+
+// static float fft_buffer[ADC_CHANNEL_NUM][FFT_LENGTH] 
+// 	__attribute__((section(".bss.cache_data"))) __ALIGNED(32);
+	
+// static float mag_buffer[ADC_CHANNEL_NUM][MAG_LENGTH] 
+// 	__attribute__((section(".bss.cache_data"))) __ALIGNED(32);
 
 static FFT_Max_Struct ch_fft_config[ADC_CHANNEL_NUM];
 static ADC_Show_Struct ch_show_config[ADC_CHANNEL_NUM];

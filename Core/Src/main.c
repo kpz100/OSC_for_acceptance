@@ -123,6 +123,7 @@ int main(void)
   MX_ADC2_Init();
   MX_DAC1_Init();
   MX_I2C2_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 	Test_Init();
 	Test_Loop();
@@ -241,7 +242,7 @@ void MPU_Config(void)
   */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x24000000;
+  MPU_InitStruct.BaseAddress = 0x24004000;
   MPU_InitStruct.Size = MPU_REGION_SIZE_16KB;
   MPU_InitStruct.SubRegionDisable = 0x0;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
