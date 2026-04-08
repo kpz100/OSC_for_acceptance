@@ -22,9 +22,6 @@ typedef struct {
 static DAC_Struct ch_dac_config[DAC_CHANNEL_NUM] 
     __attribute__((section(".bss.MPU_REGION_2"))) __ALIGNED(32);
 
-// static DAC_Struct ch_dac_config[DAC_CHANNEL_NUM]
-//     __attribute__((section(".bss.dma_buffer"))) __ALIGNED(32);
-
 static uint8_t inline Switch_Channel_Input(uint8_t ch) {
 	if (ch == 1 || ch == 2) {
 		return (ch - 1);

@@ -57,10 +57,10 @@ static void Buffer_DrawLine(LCD_Waveform_Struct* self, uint16_t x1, uint16_t y1,
 static void DrawIn_Buffer(LCD_Waveform_Struct* self, void* buffer, size_t _type, uint32_t true_maxval, uint32_t length, uint32_t color) {
     if (!self || !buffer || length == 0 || true_maxval == 0) return;
 
-    uint32_t total_pixels = self->figure.w * self->figure.h;
-    for (uint32_t i = 0; i < total_pixels; i++) {
-        self->osc_draw_buffer[i] = self->figure.bg_color;
-    }
+    // uint32_t total_pixels = self->figure.w * self->figure.h;
+    // for (uint32_t i = 0; i < total_pixels; i++) {
+    //     self->osc_draw_buffer[i] = self->figure.bg_color;
+    // }
 
     float x_ratio = (float)length / self->figure.w;
     if (x_ratio < 1.0f) x_ratio = 1.0f;
@@ -88,6 +88,15 @@ static void DrawIn_Buffer(LCD_Waveform_Struct* self, void* buffer, size_t _type,
         }
         last_x = x; last_y = screen_y;
     }
+}
+
+static void Bgin_Buffer(LCD_Waveform_Struct* self) {
+    if (!self) return;
+
+    uint32_t total_pixels = self->figure.w * self->figure.h;
+    for (uint32_t i = 0; i < total_pixels; i++) {
+        self->osc_draw_buffer[i] = self->figure.bg_color;
+    } 
 }
 
 static void DrawTo_LCD(LCD_Waveform_Struct* self) {
@@ -204,11 +213,71 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
 	return 0;
 }
 
+static int8_t rank = -1;
 
+static void OSC_Perform_Running_Else(void) {
+    if (btn_control_ch1->clicked == 1 && btn_control_ch2->clicked == 1) {
+        if (rank == -1) {
+            wf_show_lcd->bgin_buffer(wf_show_lcd);
+            rank += 1;
+        }
+        if (Get_ADC_Flag(1, SHOW_FLAG_TYPE)) {
+            Calc_Vpp8(1);
+
+            uint8_t* show_buffer = Get_Show_Buffer(1);
+            uint32_t RE_pos = Calc_Rising_Edge_Pos(1);
+            uint32_t available_length = Get_Available_Show_Length(RE_pos);
+            
+            wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, LCD_COLOR_GREEN);
+
+            Clear_ADC_Flag(1, SHOW_FLAG_TYPE);
+            Set_Next_Target_Type(1, RW_TARGET_NONE);
+
+            rank += 1;
+        }
+        if (Get_ADC_Flag(2, SHOW_FLAG_TYPE)) {
+            Calc_Vpp8(2);
+
+            uint8_t* show_buffer = Get_Show_Buffer(2);
+            uint32_t RE_pos = Calc_Rising_Edge_Pos(2);
+            uint32_t available_length = Get_Available_Show_Length(RE_pos);
+            
+            wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, LCD_COLOR_RED);
+
+            Clear_ADC_Flag(2, SHOW_FLAG_TYPE);
+            Set_Next_Target_Type(2, RW_TARGET_NONE);
+
+            rank += 1;
+        }
+        if (rank >= 2) {
+            wf_show_lcd->drawto_lcd(wf_show_lcd);
+            rank = -1;
+
+            Set_Next_Target_Type(1, RW_TARGET_FFT);
+            Set_Sample_Freq(1, ORIGINAL_SAMPLE_FREQ);
+            Set_Next_Target_Type(2, RW_TARGET_FFT);
+            Set_Sample_Freq(2, ORIGINAL_SAMPLE_FREQ);
+            
+            OSC_Vpp_Freq_Refresh(1);
+            OSC_Vpp_Freq_Refresh(2);
+        }
+    } else if (btn_control_ch1->clicked == 1) {
+		wf_show_lcd->bgin_buffer(wf_show_lcd);
+        OSC_Perform_Running(1);
+		rank = -1;
+    } else if (btn_control_ch2->clicked == 1) {
+		wf_show_lcd->bgin_buffer(wf_show_lcd);
+        OSC_Perform_Running(2);
+		rank = -1;
+    } else {
+		
+	}
+}
 
 void OSC_Core_Init(void) {
 	fft_tick = 0;
 	show_tick = 0;
+    rank = -1;
 	
     Tim_Control_Init();
     ADC_FFT_Init();
@@ -238,6 +307,7 @@ void OSC_Page_Init(void) {
 
     wf_show_lcd = LCD_UI_CreateWaveform("wf_show", 0, 60, MAX_OSC_WIDTH, MAX_OSC_HEIGHT, LCD_COLOR_WHITE, LCD_COLOR_DARKGREEN, LCD_COLOR_GREEN, LCD_COLOR_RED);
     wf_show_lcd->drawin_buffer = DrawIn_Buffer;
+    wf_show_lcd->bgin_buffer = Bgin_Buffer;
     wf_show_lcd->drawto_lcd = DrawTo_LCD;
 
     LCD_UI_Render_All();
@@ -246,6 +316,6 @@ void OSC_Page_Init(void) {
 void OSC_Logic_Running(void) {
     for (uint8_t ch = 1; ch <= 2; ch++) {
         OSC_FFT_Running(ch);
-        OSC_Perform_Running(ch);
     }
+    OSC_Perform_Running_Else();
 }

@@ -86,6 +86,7 @@ LCD_Waveform_Struct* LCD_UI_CreateWaveform(const char* inner_name, uint16_t x, u
     wf->figure.inner_name[MAX_INNER_NAME_LENGTH - 1] = '\0';
 
     wf->drawin_buffer = NULL;
+    wf->bgin_buffer = NULL;
     wf->drawto_lcd = NULL;
 
     return wf;

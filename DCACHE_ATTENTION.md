@@ -63,6 +63,13 @@ static DAC_Struct ch_dac_config[DAC_CHANNEL_NUM]
     __attribute__((section(".bss.MPU_REGION_2"))) __ALIGNED(32);
 ```
 
+### bsp_lcd_single
+
+```c
+static uint32_t lcd_frame_buffer[LCD_WIDTH * LCD_HEIGHT] 
+    __attribute__((used, section(".bss.LCD_FRAME_BUFFER"))) __ALIGNED(32);
+```
+
 ### ui_rampool
 
 ```c

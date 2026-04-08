@@ -10,8 +10,8 @@ struct LCD_Button_Struct;
 typedef void (*ButtonMethod)(struct LCD_Button_Struct* self);
 
 struct LCD_Waveform_Struct;
-typedef void (*WaveformMethod)(struct LCD_Waveform_Struct* self, void* buffer, size_t _type, uint32_t true_maxval, uint32_t length, uint32_t color);
-typedef void (*WavedrawMehtod)(struct LCD_Waveform_Struct* self);
+typedef void (*WaveformMethod1)(struct LCD_Waveform_Struct* self, void* buffer, size_t _type, uint32_t true_maxval, uint32_t length, uint32_t color);
+typedef void (*WaveformMethod2)(struct LCD_Waveform_Struct* self);
 
 #define MAX_OSC_WIDTH           800u
 #define MAX_OSC_HEIGHT          255u
@@ -66,8 +66,9 @@ typedef struct LCD_Waveform_Struct {
     uint32_t waveform_color[MAX_WAVEFORM_CHANNEL];
     uint32_t osc_draw_buffer[MAX_OSC_WIDTH * MAX_OSC_HEIGHT];
 
-    WaveformMethod drawin_buffer;
-    WavedrawMehtod drawto_lcd;
+    WaveformMethod1 drawin_buffer;
+    WaveformMethod2 bgin_buffer;
+    WaveformMethod2 drawto_lcd;
 } LCD_Waveform_Struct;
 
 #endif

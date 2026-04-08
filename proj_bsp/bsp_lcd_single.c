@@ -6,7 +6,7 @@
 #define abs(x) ((x) > 0) ? (x) : -(x)
 #endif
 
-uint32_t lcd_frame_buffer[LCD_WIDTH * LCD_HEIGHT] __attribute__((used, section(".bss.LCD_FRAME_BUFFER"))) __ALIGNED(32);
+static uint32_t lcd_frame_buffer[LCD_WIDTH * LCD_HEIGHT] __attribute__((used, section(".bss.LCD_FRAME_BUFFER"))) __ALIGNED(32);
 
 void BSP_LCD_Init(void) {
     hdma2d.Instance = DMA2D;
