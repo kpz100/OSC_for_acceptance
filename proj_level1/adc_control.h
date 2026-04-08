@@ -8,7 +8,7 @@
 #define abs(x) ((x) > 0) ? (x) : -(x)
 #endif
 
-#define FFT_LENGTH 1024u
+#define FFT_LENGTH 4096u
 #define MAG_LENGTH (FFT_LENGTH / 2)
 #define SHOW_LENGTH 2048u
 #define ADC_LENGTH 1024u
