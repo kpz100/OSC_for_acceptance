@@ -119,8 +119,6 @@ static void Start_ADC_Channel(uint8_t ch) {
 	HAL_ADCEx_Calibration_Start(adc, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(adc, (uint32_t *)adc_buffer[sch], ADC_LENGTH);
 	Control_Tim_Clk(ch, 1);
-	
-	printf("Enable ADC CH%d with Sample Freq %.2fHz\n", ch, Get_Sample_Freq(ch));
 }
 
 /* =========================== Initialization =========================== */
@@ -160,7 +158,7 @@ void ADC_FFT_Init(void) {
  * Returns 1 when frequency is confidently detected (peak error < threshold or max attempts reached)
  * Returns 0 while still converging (needs to adjust sampling frequency and retry)
  */
-uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
+__attribute__((section(".text.fast_code"))) uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
 	int8_t sch = Get_And_Validate_Channel(ch);
 	if (sch < 0) return 0;
 
@@ -185,30 +183,37 @@ uint8_t Calc_Comp_FFT_Ampl(uint8_t ch) {
 	ch_fft_config[sch].second_max_index = ch_fft_config[sch].first_max_index + 1;
 	ch_fft_config[sch].second_mag_max = mag_buffer[sch][ch_fft_config[sch].second_max_index];
 	
+	// Calculate first round frequency for warning check
+	float sample_freq = (float)Get_Tim_Freq(ch);
+	float first_round_freq = ((float)ch_fft_config[sch].first_max_index + 0.5f) * sample_freq / (float)FFT_LENGTH;
+	
+	// Check if frequency exceeds warning threshold - output immediately if so
+	if (first_round_freq > WARNNING_FFT_FREQ) {
+		ch_show_config[sch].fft_freq = first_round_freq;
+		ch_fft_config[sch].fft_running_time = 0;
+		
+		float fft_peak_error = (ch_fft_config[sch].first_mag_max - ch_fft_config[sch].second_mag_max) / ch_fft_config[sch].first_mag_max;	
+		
+		return 1;
+	}
+	
 	// Check if frequency detection is confident (peaks are well separated)
 	float fft_peak_error = (ch_fft_config[sch].first_mag_max - ch_fft_config[sch].second_mag_max) / ch_fft_config[sch].first_mag_max;
 	if (fft_peak_error < MAX_FFT_AMP_ERROR) {
 		// Confident frequency detection - use interpolated peak position
-		float sample_freq = (float)Get_Tim_Freq(ch);
-		ch_show_config[sch].fft_freq = ((float)ch_fft_config[sch].first_max_index + 0.5f) * sample_freq / (float)FFT_LENGTH;
+		ch_show_config[sch].fft_freq = first_round_freq;
 		ch_fft_config[sch].fft_running_time = 0;
-
-		printf("FFT: CH%d Freq=%.2fHz, Peak_Error=%.2f%%, Running_Time=%d\n", ch, ch_show_config[sch].fft_freq, fft_peak_error * 100.0f, ch_fft_config[sch].fft_running_time);
 
 		return 1;
 	} else {
 		// Not confident yet - need to adjust sampling rate and retry
 		ch_fft_config[sch].fft_running_time++;
 
-		printf("Nowtime Sample Freq=%.2fHz\n", Get_Sample_Freq(ch));
-
 		// After max attempts, settle on integer bin frequency
 		if (ch_fft_config[sch].fft_running_time >= SHIFT_MAX_RANK) {
 			float sample_freq = (float)Get_Tim_Freq(ch);
 			ch_show_config[sch].fft_freq = (float)ch_fft_config[sch].first_max_index * sample_freq / (float)FFT_LENGTH;
 			ch_fft_config[sch].fft_running_time = 0;
-
-			printf("FFT: CH%d Freq=%.2fHz, Peak_Error=%.2f%%, Running_Time=%d\n", ch, ch_show_config[sch].fft_freq, fft_peak_error * 100.0f, ch_fft_config[sch].fft_running_time);
 
 			return 1;
 		}

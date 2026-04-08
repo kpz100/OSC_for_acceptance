@@ -66,12 +66,14 @@ void Test_Loop(void)
     uint32_t temp_count = BSP_DWT_GetCounter();
     while (1) {
         if (des_config) {
+			BSP_DWT_Delay_ms(10);
             DES_Page_Init();
             while (des_config) {
                 Page_Touch_Logic();
             }
         }
         if (osc_config) {
+			BSP_DWT_Delay_ms(10);
             OSC_Page_Init();
             OSC_Core_Init();
             while (osc_config) {
@@ -80,6 +82,7 @@ void Test_Loop(void)
             }
         }
         if (gen_config) {
+			BSP_DWT_Delay_ms(10);
             GEN_Page_Init();
             GEN_Core_Init();
             while (gen_config) {

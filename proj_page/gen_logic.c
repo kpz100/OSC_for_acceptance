@@ -37,7 +37,7 @@
 // Frequency adjustment parameters
 #define MAX_FREQ 50000u
 #define MIN_FREQ 1000u
-#define FREQ_STEP 1000u
+#define FREQ_STEP 100u
 
 // Duty cycle adjustment parameters
 #define MAX_DUTY 99u
@@ -542,43 +542,43 @@ void GEN_Page_Init(void) {
 	// Channel 1 control buttons (green color scheme)
 	btn_control_ch1 = LCD_UI_CreateButton("btn_ch1", 20, 210, 80, 50, LCD_COLOR_DARKGREEN, "CH1", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_control_ch1->on_click = On_Channel_Toggle;
-	btn_wftype_ch1 = LCD_UI_CreateButton("wf_ch1", 110, 210, 80, 50, LCD_COLOR_DARKGREEN, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_wftype_ch1 = LCD_UI_CreateButton("wf_ch1", 130, 210, 80, 50, LCD_COLOR_DARKGREEN, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_wftype_ch1->on_click = Button_Waveform_Type;
 
 	btn_vpp_plus_ch1 = LCD_UI_CreateButton("vpp_plus_ch1", 20, 270, 80, 50, LCD_COLOR_DARKGREEN, "100mV+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_vpp_plus_ch1->on_click = Button_Vpp_Adjust;
-	btn_vpp_minus_ch1 = LCD_UI_CreateButton("vpp_minus_ch1", 110, 270, 80, 50, LCD_COLOR_DARKGREEN, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_vpp_minus_ch1 = LCD_UI_CreateButton("vpp_minus_ch1", 130, 270, 80, 50, LCD_COLOR_DARKGREEN, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_vpp_minus_ch1->on_click = Button_Vpp_Adjust;
 
-	btn_freq_plus_ch1 = LCD_UI_CreateButton("freq_plus_ch1", 20, 330, 80, 50, LCD_COLOR_DARKGREEN, "1kHz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_freq_plus_ch1 = LCD_UI_CreateButton("freq_plus_ch1", 20, 330, 80, 50, LCD_COLOR_DARKGREEN, "100Hz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_freq_plus_ch1->on_click = Button_Freq_Adjust;
-	btn_freq_minus_ch1 = LCD_UI_CreateButton("freq_minus_ch1", 110, 330, 80, 50, LCD_COLOR_DARKGREEN, "1kHz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_freq_minus_ch1 = LCD_UI_CreateButton("freq_minus_ch1", 130, 330, 80, 50, LCD_COLOR_DARKGREEN, "100Hz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_freq_minus_ch1->on_click = Button_Freq_Adjust;
 
 	btn_duty_plus_ch1 = LCD_UI_CreateButton("duty_plus_ch1", 20, 390, 80, 50, LCD_COLOR_DARKGREEN, "1%+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_duty_plus_ch1->on_click = Button_Duty_Adjust;
-	btn_duty_minus_ch1 = LCD_UI_CreateButton("duty_minus_ch1", 110, 390, 80, 50, LCD_COLOR_DARKGREEN, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_duty_minus_ch1 = LCD_UI_CreateButton("duty_minus_ch1", 130, 390, 80, 50, LCD_COLOR_DARKGREEN, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_duty_minus_ch1->on_click = Button_Duty_Adjust;
 
 	// Channel 2 control buttons (red color scheme)
 	btn_control_ch2 = LCD_UI_CreateButton("btn_ch2", 460, 210, 80, 50, LCD_COLOR_RED, "CH2", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_control_ch2->on_click = On_Channel_Toggle;
-	btn_wftype_ch2 = LCD_UI_CreateButton("wf_ch2", 550, 210, 80, 50, LCD_COLOR_RED, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_wftype_ch2 = LCD_UI_CreateButton("wf_ch2", 570, 210, 80, 50, LCD_COLOR_RED, "SIN", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_wftype_ch2->on_click = Button_Waveform_Type;
 
 	btn_vpp_plus_ch2 = LCD_UI_CreateButton("vpp_plus_ch2", 460, 270, 80, 50, LCD_COLOR_RED, "100mV+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_vpp_plus_ch2->on_click = Button_Vpp_Adjust;
-	btn_vpp_minus_ch2 = LCD_UI_CreateButton("vpp_minus_ch2", 550, 270, 80, 50, LCD_COLOR_RED, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_vpp_minus_ch2 = LCD_UI_CreateButton("vpp_minus_ch2", 570, 270, 80, 50, LCD_COLOR_RED, "100mV-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_vpp_minus_ch2->on_click = Button_Vpp_Adjust;
 
-	btn_freq_plus_ch2 = LCD_UI_CreateButton("freq_plus_ch2", 460, 330, 80, 50, LCD_COLOR_RED, "1kHz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_freq_plus_ch2 = LCD_UI_CreateButton("freq_plus_ch2", 460, 330, 80, 50, LCD_COLOR_RED, "100Hz+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_freq_plus_ch2->on_click = Button_Freq_Adjust;
-	btn_freq_minus_ch2 = LCD_UI_CreateButton("freq_minus_ch2", 550, 330, 80, 50, LCD_COLOR_RED, "1kHz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_freq_minus_ch2 = LCD_UI_CreateButton("freq_minus_ch2", 570, 330, 80, 50, LCD_COLOR_RED, "100Hz-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_freq_minus_ch2->on_click = Button_Freq_Adjust;
 
 	btn_duty_plus_ch2 = LCD_UI_CreateButton("duty_plus_ch2", 460, 390, 80, 50, LCD_COLOR_RED, "1%+", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_duty_plus_ch2->on_click = Button_Duty_Adjust;
-	btn_duty_minus_ch2 = LCD_UI_CreateButton("duty_minus_ch2", 550, 390, 80, 50, LCD_COLOR_RED, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_duty_minus_ch2 = LCD_UI_CreateButton("duty_minus_ch2", 570, 390, 80, 50, LCD_COLOR_RED, "1%-", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_duty_minus_ch2->on_click = Button_Duty_Adjust;
 
 	// Waveform preview panes (left side for CH1, right side for CH2)

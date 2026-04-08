@@ -43,6 +43,7 @@ uint32_t show_tick = 0;     // Display update timer
 /* =========================== Static UI Elements =========================== */
 
 static LCD_Waveform_Struct* wf_show_lcd = NULL;       // Main waveform display
+static LCD_Button_Struct* btn_clear_wf = NULL;        // Clear waveform button
 static LCD_Button_Struct* btn_return_des = NULL;      // Return to desktop button
 static LCD_Button_Struct* btn_control_ch1 = NULL;     // Channel 1 enable/disable
 static LCD_Button_Struct* btn_control_ch2 = NULL;     // Channel 2 enable/disable
@@ -145,6 +146,16 @@ static void DrawTo_LCD(LCD_Waveform_Struct* self) {
 
 /* =========================== Button Callbacks =========================== */
 
+static void On_Clear_Waveform(LCD_Button_Struct* self) {
+	Bgin_Buffer(wf_show_lcd);
+	DrawTo_LCD(wf_show_lcd);
+	char temp[64] = {0};
+	sprintf(temp, "CH1: Vpp:-.--V Freq:-.--Hz%s", filled_txt);
+	txt_ch1_vpp_fft->refresh_txt(txt_ch1_vpp_fft, temp);
+	sprintf(temp, "CH2: Vpp:-.--V Freq:-.--Hz%s", filled_txt);
+	txt_ch2_vpp_fft->refresh_txt(txt_ch2_vpp_fft, temp);
+}
+
 /**
  * Return to desktop page button handler
  */
@@ -211,8 +222,6 @@ static void OSC_FFT_Running(uint8_t ch) {
 				Set_Sample_Freq(ch, fft_freq * (1.0f - 1.0f / ETS_SAMPLE_RATE));
 			}
 
-			printf("Set CH%d Sample Freq to %.2fHz\n", ch, Get_Sample_Freq(ch));
-
 			Clear_ADC_Flag(ch, FFT_FLAG_TYPE);
 			Set_Next_Target_Type(ch, RW_TARGET_SHOW);
 		} else {
@@ -230,8 +239,6 @@ static void OSC_FFT_Running(uint8_t ch) {
 static void OSC_Vpp_Freq_Refresh(uint8_t ch) {
 	float vpp = (float)Get_Vpp_8(ch) * 3.3f / 255.0f;
 	float freq = Get_FFT_Freq(ch);
-
-	printf("Vpp: CH%d=%.2fV, Freq=%.2fHz\n", ch, vpp, freq);
 
 	char txt[64] = {0};
 	sprintf(txt, "CH%d: Vpp=%.2fV Freq=%.2fHz%s", ch, vpp, freq, filled_txt);
@@ -253,19 +260,15 @@ static uint8_t OSC_Perform_Running(uint8_t ch) {
 		uint32_t RE_pos = Calc_Rising_Edge_Pos(ch);
 		uint32_t available_length = Get_Available_Show_Length(RE_pos);
 		
-		wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
+		wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, wf_show_lcd->figure.w, ((ch == 1) ? LCD_COLOR_GREEN : LCD_COLOR_RED));
 
 		wf_show_lcd->drawto_lcd(wf_show_lcd);
-
-		printf("Show: CH%d Available_Length=%u\n", ch, available_length);
 
 		Clear_ADC_Flag(ch, SHOW_FLAG_TYPE);
 		Set_Next_Target_Type(ch, RW_TARGET_FFT);
 		Set_Sample_Freq(ch, ORIGINAL_SAMPLE_FREQ);
 		
 		OSC_Vpp_Freq_Refresh(ch);
-		
-		printf("Next Rank\n\n");
 
 		return 1;
 	}
@@ -292,7 +295,7 @@ static void OSC_Perform_Running_Else(void) {
 			uint32_t RE_pos = Calc_Rising_Edge_Pos(1);
 			uint32_t available_length = Get_Available_Show_Length(RE_pos);
 			
-			wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, LCD_COLOR_GREEN);
+			wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, wf_show_lcd->figure.w, LCD_COLOR_GREEN);
 
 			Clear_ADC_Flag(1, SHOW_FLAG_TYPE);
 			Set_Next_Target_Type(1, RW_TARGET_NONE);
@@ -306,7 +309,7 @@ static void OSC_Perform_Running_Else(void) {
 			uint32_t RE_pos = Calc_Rising_Edge_Pos(2);
 			uint32_t available_length = Get_Available_Show_Length(RE_pos);
 			
-			wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, available_length, LCD_COLOR_RED);
+			wf_show_lcd->drawin_buffer(wf_show_lcd, &show_buffer[RE_pos], sizeof(uint8_t), 255, wf_show_lcd->figure.w, LCD_COLOR_RED);
 
 			Clear_ADC_Flag(2, SHOW_FLAG_TYPE);
 			Set_Next_Target_Type(2, RW_TARGET_NONE);
@@ -371,6 +374,9 @@ void OSC_Page_Init(void) {
 	btn_control_ch2 = LCD_UI_CreateButton("btn_ch2", 10, 420, 60, 50, LCD_COLOR_RED, "CH2", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
 	btn_control_ch1->on_click = On_Channel_Toggle;
 	btn_control_ch2->on_click = On_Channel_Toggle;
+
+    btn_clear_wf = LCD_UI_CreateButton("btn_clear_wf", 400, 10, 60, 50, LCD_COLOR_DARKGREEN, "Clear", ASCII_FONT_TYPE_16x32, LCD_COLOR_WHITE);
+	btn_clear_wf->on_click = On_Clear_Waveform;
 
 	// Create measurement display
 	char temp_txt[64] = {0};

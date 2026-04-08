@@ -114,7 +114,6 @@ uint8_t Page_Touch_Logic(void) {
 
 		// Route to UI touch handler
 		UI_Touch_Process(x_touch_pos, y_touch_pos);
-		printf("Touch at: (%d, %d)\r\n", x_touch_pos, y_touch_pos);
 		
 		// Reset for next touch event
 		x_touch_pos = 0;
